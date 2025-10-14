@@ -1,0 +1,292 @@
+2025-10-14 15:20:48,885 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Starting OllamaMcpClientWsApplication using Java 17.0.12 with PID 70051 (/Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws/target/classes started by wangxiaochen in /Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws)
+2025-10-14 15:20:48,887 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - The following 1 profile is active: "prod"
+2025-10-14 15:20:49,535 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9802"]
+2025-10-14 15:20:49,536 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-10-14 15:20:49,536 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-10-14 15:20:49,569 [main] INFO  o.a.c.c.C.[.[localhost].[/mcp] - Initializing Spring embedded WebApplicationContext
+2025-10-14 15:20:49,896 [ForkJoinPool.commonPool-worker-1] ERROR i.m.c.t.HttpClientSseClientTransport - SSE connection error
+java.util.concurrent.CompletionException: java.net.ConnectException
+	at java.base/java.util.concurrent.CompletableFuture.encodeRelay(CompletableFuture.java:368)
+	at java.base/java.util.concurrent.CompletableFuture.completeRelay(CompletableFuture.java:377)
+	at java.base/java.util.concurrent.CompletableFuture$UniCompose.tryFire(CompletableFuture.java:1152)
+	at java.base/java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:510)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run$$$capture(CompletableFuture.java:1773)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+Caused by: java.net.ConnectException: null
+	at java.net.http/jdk.internal.net.http.common.Utils.toConnectException(Utils.java:1055)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:198)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.checkRetryConnect(PlainHttpConnection.java:230)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.lambda$connectAsync$1(PlainHttpConnection.java:206)
+	at java.base/java.util.concurrent.CompletableFuture.uniHandle(CompletableFuture.java:934)
+	at java.base/java.util.concurrent.CompletableFuture$UniHandle.tryFire(CompletableFuture.java:911)
+	... 6 common frames omitted
+Caused by: java.nio.channels.ClosedChannelException: null
+	at java.base/sun.nio.ch.SocketChannelImpl.ensureOpen(SocketChannelImpl.java:195)
+	at java.base/sun.nio.ch.SocketChannelImpl.beginConnect(SocketChannelImpl.java:760)
+	at java.base/sun.nio.ch.SocketChannelImpl.connect(SocketChannelImpl.java:848)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.lambda$connectAsync$0(PlainHttpConnection.java:183)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:569)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:185)
+	... 10 common frames omitted
+2025-10-14 15:20:49,899 [ForkJoinPool.commonPool-worker-1] ERROR reactor.core.publisher.Operators - Operator called default onErrorDropped
+reactor.core.Exceptions$ErrorCallbackNotImplemented: java.net.ConnectException
+Caused by: java.net.ConnectException: null
+	at java.net.http/jdk.internal.net.http.common.Utils.toConnectException(Utils.java:1055)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:198)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.checkRetryConnect(PlainHttpConnection.java:230)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.lambda$connectAsync$1(PlainHttpConnection.java:206)
+	at java.base/java.util.concurrent.CompletableFuture.uniHandle(CompletableFuture.java:934)
+	at java.base/java.util.concurrent.CompletableFuture$UniHandle.tryFire(CompletableFuture.java:911)
+	at java.base/java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:510)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run$$$capture(CompletableFuture.java:1773)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+Caused by: java.nio.channels.ClosedChannelException: null
+	at java.base/sun.nio.ch.SocketChannelImpl.ensureOpen(SocketChannelImpl.java:195)
+	at java.base/sun.nio.ch.SocketChannelImpl.beginConnect(SocketChannelImpl.java:760)
+	at java.base/sun.nio.ch.SocketChannelImpl.connect(SocketChannelImpl.java:848)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.lambda$connectAsync$0(PlainHttpConnection.java:183)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:569)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:185)
+	... 10 common frames omitted
+2025-10-14 15:20:59,930 [main] INFO  o.a.catalina.core.StandardService - Stopping service [Tomcat]
+2025-10-14 15:22:01,248 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Starting OllamaMcpClientWsApplication using Java 17.0.12 with PID 70055 (/Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws/target/classes started by wangxiaochen in /Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws)
+2025-10-14 15:22:01,249 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - The following 1 profile is active: "prod"
+2025-10-14 15:22:01,931 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9802"]
+2025-10-14 15:22:01,933 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-10-14 15:22:01,933 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-10-14 15:22:01,967 [main] INFO  o.a.c.c.C.[.[localhost].[/mcp] - Initializing Spring embedded WebApplicationContext
+2025-10-14 15:22:02,292 [ForkJoinPool.commonPool-worker-1] ERROR i.m.c.t.HttpClientSseClientTransport - SSE connection error
+java.util.concurrent.CompletionException: java.net.ConnectException
+	at java.base/java.util.concurrent.CompletableFuture.encodeRelay(CompletableFuture.java:368)
+	at java.base/java.util.concurrent.CompletableFuture.completeRelay(CompletableFuture.java:377)
+	at java.base/java.util.concurrent.CompletableFuture$UniCompose.tryFire(CompletableFuture.java:1152)
+	at java.base/java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:510)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run$$$capture(CompletableFuture.java:1773)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+Caused by: java.net.ConnectException: null
+	at java.net.http/jdk.internal.net.http.common.Utils.toConnectException(Utils.java:1055)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:198)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.checkRetryConnect(PlainHttpConnection.java:230)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.lambda$connectAsync$1(PlainHttpConnection.java:206)
+	at java.base/java.util.concurrent.CompletableFuture.uniHandle(CompletableFuture.java:934)
+	at java.base/java.util.concurrent.CompletableFuture$UniHandle.tryFire(CompletableFuture.java:911)
+	... 6 common frames omitted
+Caused by: java.nio.channels.ClosedChannelException: null
+	at java.base/sun.nio.ch.SocketChannelImpl.ensureOpen(SocketChannelImpl.java:195)
+	at java.base/sun.nio.ch.SocketChannelImpl.beginConnect(SocketChannelImpl.java:760)
+	at java.base/sun.nio.ch.SocketChannelImpl.connect(SocketChannelImpl.java:848)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.lambda$connectAsync$0(PlainHttpConnection.java:183)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:569)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:185)
+	... 10 common frames omitted
+2025-10-14 15:22:02,294 [ForkJoinPool.commonPool-worker-1] ERROR reactor.core.publisher.Operators - Operator called default onErrorDropped
+reactor.core.Exceptions$ErrorCallbackNotImplemented: java.net.ConnectException
+Caused by: java.net.ConnectException: null
+	at java.net.http/jdk.internal.net.http.common.Utils.toConnectException(Utils.java:1055)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:198)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.checkRetryConnect(PlainHttpConnection.java:230)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.lambda$connectAsync$1(PlainHttpConnection.java:206)
+	at java.base/java.util.concurrent.CompletableFuture.uniHandle(CompletableFuture.java:934)
+	at java.base/java.util.concurrent.CompletableFuture$UniHandle.tryFire(CompletableFuture.java:911)
+	at java.base/java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:510)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run$$$capture(CompletableFuture.java:1773)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+Caused by: java.nio.channels.ClosedChannelException: null
+	at java.base/sun.nio.ch.SocketChannelImpl.ensureOpen(SocketChannelImpl.java:195)
+	at java.base/sun.nio.ch.SocketChannelImpl.beginConnect(SocketChannelImpl.java:760)
+	at java.base/sun.nio.ch.SocketChannelImpl.connect(SocketChannelImpl.java:848)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.lambda$connectAsync$0(PlainHttpConnection.java:183)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:569)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:185)
+	... 10 common frames omitted
+2025-10-14 15:22:12,314 [main] INFO  o.a.catalina.core.StandardService - Stopping service [Tomcat]
+2025-10-14 15:26:03,698 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Starting OllamaMcpClientWsApplication using Java 17.0.12 with PID 70145 (/Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws/target/classes started by wangxiaochen in /Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws)
+2025-10-14 15:26:03,700 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - The following 1 profile is active: "prod"
+2025-10-14 15:26:04,365 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9802"]
+2025-10-14 15:26:04,366 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-10-14 15:26:04,366 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-10-14 15:26:04,404 [main] INFO  o.a.c.c.C.[.[localhost].[/mcp] - Initializing Spring embedded WebApplicationContext
+2025-10-14 15:26:04,741 [ForkJoinPool.commonPool-worker-1] ERROR i.m.c.t.HttpClientSseClientTransport - SSE connection error
+java.util.concurrent.CompletionException: java.net.ConnectException
+	at java.base/java.util.concurrent.CompletableFuture.encodeRelay(CompletableFuture.java:368)
+	at java.base/java.util.concurrent.CompletableFuture.completeRelay(CompletableFuture.java:377)
+	at java.base/java.util.concurrent.CompletableFuture$UniCompose.tryFire(CompletableFuture.java:1152)
+	at java.base/java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:510)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run$$$capture(CompletableFuture.java:1773)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+Caused by: java.net.ConnectException: null
+	at java.net.http/jdk.internal.net.http.common.Utils.toConnectException(Utils.java:1055)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:198)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.checkRetryConnect(PlainHttpConnection.java:230)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.lambda$connectAsync$1(PlainHttpConnection.java:206)
+	at java.base/java.util.concurrent.CompletableFuture.uniHandle(CompletableFuture.java:934)
+	at java.base/java.util.concurrent.CompletableFuture$UniHandle.tryFire(CompletableFuture.java:911)
+	... 6 common frames omitted
+Caused by: java.nio.channels.ClosedChannelException: null
+	at java.base/sun.nio.ch.SocketChannelImpl.ensureOpen(SocketChannelImpl.java:195)
+	at java.base/sun.nio.ch.SocketChannelImpl.beginConnect(SocketChannelImpl.java:760)
+	at java.base/sun.nio.ch.SocketChannelImpl.connect(SocketChannelImpl.java:848)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.lambda$connectAsync$0(PlainHttpConnection.java:183)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:569)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:185)
+	... 10 common frames omitted
+2025-10-14 15:26:04,744 [ForkJoinPool.commonPool-worker-1] ERROR reactor.core.publisher.Operators - Operator called default onErrorDropped
+reactor.core.Exceptions$ErrorCallbackNotImplemented: java.net.ConnectException
+Caused by: java.net.ConnectException: null
+	at java.net.http/jdk.internal.net.http.common.Utils.toConnectException(Utils.java:1055)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:198)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.checkRetryConnect(PlainHttpConnection.java:230)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.lambda$connectAsync$1(PlainHttpConnection.java:206)
+	at java.base/java.util.concurrent.CompletableFuture.uniHandle(CompletableFuture.java:934)
+	at java.base/java.util.concurrent.CompletableFuture$UniHandle.tryFire(CompletableFuture.java:911)
+	at java.base/java.util.concurrent.CompletableFuture.postComplete(CompletableFuture.java:510)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run$$$capture(CompletableFuture.java:1773)
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+Caused by: java.nio.channels.ClosedChannelException: null
+	at java.base/sun.nio.ch.SocketChannelImpl.ensureOpen(SocketChannelImpl.java:195)
+	at java.base/sun.nio.ch.SocketChannelImpl.beginConnect(SocketChannelImpl.java:760)
+	at java.base/sun.nio.ch.SocketChannelImpl.connect(SocketChannelImpl.java:848)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.lambda$connectAsync$0(PlainHttpConnection.java:183)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:569)
+	at java.net.http/jdk.internal.net.http.PlainHttpConnection.connectAsync(PlainHttpConnection.java:185)
+	... 10 common frames omitted
+2025-10-14 15:26:14,765 [main] INFO  o.a.catalina.core.StandardService - Stopping service [Tomcat]
+2025-10-14 15:26:21,781 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Starting OllamaMcpClientWsApplication using Java 17.0.12 with PID 70153 (/Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws/target/classes started by wangxiaochen in /Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws)
+2025-10-14 15:26:21,782 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - The following 1 profile is active: "prod"
+2025-10-14 15:26:22,426 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9802"]
+2025-10-14 15:26:22,428 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-10-14 15:26:22,428 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-10-14 15:26:22,461 [main] INFO  o.a.c.c.C.[.[localhost].[/mcp] - Initializing Spring embedded WebApplicationContext
+2025-10-14 15:26:22,943 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9802"]
+2025-10-14 15:26:22,974 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Started OllamaMcpClientWsApplication in 1.512 seconds (process running for 1.89)
+2025-10-14 15:29:42,802 [http-nio-9802-exec-1] INFO  o.a.c.c.C.[.[localhost].[/mcp] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-10-14 15:29:42,803 [http-nio-9802-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-10-14 15:29:42,803 [http-nio-9802-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 0 ms
+2025-10-14 15:35:10,504 [http-nio-9802-exec-5] INFO  c.c.w.c.SpringWebSocketConfigurator - userProperties: {org.apache.tomcat.websocket.pojo.PojoEndpoint.methodMapping=org.apache.tomcat.websocket.pojo.PojoMethodMapping@527b5ffd}
+2025-10-14 15:35:10,505 [http-nio-9802-exec-5] INFO  c.c.w.c.SpringWebSocketConfigurator - headers: {upgrade=[websocket], host=[localhost:9802], sec-websocket-key=[lvfyRa+3hRVEqaPPE/Hnow==], connection=[upgrade], sec-websocket-version=[13]}
+2025-10-14 15:35:10,517 [http-nio-9802-exec-5] INFO  c.c.ws.websocket.WsServerEndpoint - 连接建立：sessionId=0
+2025-10-14 15:35:10,566 [http-nio-9802-exec-6] INFO  c.c.ws.websocket.WsServerEndpoint - 收到消息：sessionId=0, message=ping
+2025-10-14 15:35:10,566 [http-nio-9802-exec-6] INFO  c.c.ws.websocket.WsServerEndpoint - sessionId：0 ping
+2025-10-14 15:35:10,569 [http-nio-9802-exec-6] INFO  c.c.ws.websocket.WsServerEndpoint - 收到消息：sessionId=0, message={
+  "action": "chat",
+  "payload": {
+    "prompt": "什么是 Ollama？"
+  }
+}
+2025-10-14 15:35:20,100 [http-nio-9802-exec-6] INFO  c.c.ws.websocket.WsServerEndpoint - 处理结果：好的，我来为你解释一下什么是 Ollama。
+
+**Ollama 是什么？**
+
+Ollama 是一款强大的文本生成工具，它主要用于**构建和运行 AI 文本生成模型（如 Llama 2、Mistral 等）**，并且**简化了使用这些模型的过程**。 简单来说，它就像一个“AI 机器”的入口点，让你更容易地使用这些强大的 AI 模型，而无需复杂的配置和技术知识。
+
+**Ollama 的核心功能和特点：**
+
+* **简化模型部署：** Ollama 提供了工具和脚本，让你能够在本地或云端部署各种 AI 模型，无需自己编写复杂的代码。
+* **易于使用：** 它提供了用户友好的界面和工具，让你可以在几分钟内就能设置、运行和管理你的 AI 模型。
+* **依赖管理：** Ollama 自动管理你使用的模型和依赖项，确保模型在运行过程中稳定运行。
+* **本地部署：**  Ollama 最大的优势在于它支持**本地部署**，这意味着你可以运行模型，而不需要依赖云服务，保护你的隐私，并且可以避免依赖于昂贵的云服务费用。
+* **支持多种模型：** Ollama 支持流行的开源模型，例如 Llama 2、Mistral 和其他。
+* **推理引擎：** 它也提供了一个推理引擎，可以高效地处理文本生成任务。
+* **开源和免费：** Ollama 是开源的，所以你可以免费使用和修改它。
+
+**Ollama 的使用场景：**
+
+* **本地 AI 应用：**  创建自己的 AI 应用，无需依赖云服务。
+* **实验和开发：** 快速尝试和实验新的 AI 模型。
+* **内容创作：** 生成文本、诗歌、故事等。
+* **代码生成：**  利用 AI 模型来辅助代码编写。
+* **研究和学习：** 探索和学习 AI 技术的可能性。
+
+**简单总结：**
+
+Ollama  就像一个 “AI 蓝图”，它帮你轻松地“搭建” AI 模型，不用自己编写复杂的代码，并且可以本地运行，提供更多控制权和隐私保护。
+
+**你可以通过以下链接了解更多信息：**
+
+* **Ollama 官网:** [https://ollama.com/](https://ollama.com/)
+
+希望这个解释对你有所帮助！ 还有什么想了解的吗？
+
+2025-10-14 15:35:40,977 [http-nio-9802-exec-7] INFO  c.c.ws.websocket.WsServerEndpoint - 异常：sessionId=0, error=null
+2025-10-14 15:35:40,979 [http-nio-9802-exec-7] INFO  c.c.ws.websocket.WsServerEndpoint - 连接关闭：sessionId=0
+2025-10-14 15:36:09,955 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Starting OllamaMcpClientWsApplication using Java 17.0.12 with PID 70313 (/Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws/target/classes started by wangxiaochen in /Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws)
+2025-10-14 15:36:09,956 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - The following 1 profile is active: "prod"
+2025-10-14 15:36:10,605 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9802"]
+2025-10-14 15:36:10,606 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-10-14 15:36:10,607 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-10-14 15:36:10,640 [main] INFO  o.a.c.c.C.[.[localhost].[/mcp] - Initializing Spring embedded WebApplicationContext
+2025-10-14 15:36:11,108 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9802"]
+2025-10-14 15:36:11,138 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Started OllamaMcpClientWsApplication in 1.508 seconds (process running for 1.847)
+2025-10-14 15:36:15,434 [http-nio-9802-exec-1] INFO  o.a.c.c.C.[.[localhost].[/mcp] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-10-14 15:36:15,435 [http-nio-9802-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-10-14 15:36:15,436 [http-nio-9802-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2025-10-14 15:36:15,444 [http-nio-9802-exec-1] INFO  c.c.w.c.SpringWebSocketConfigurator - userProperties: {org.apache.tomcat.websocket.pojo.PojoEndpoint.methodMapping=org.apache.tomcat.websocket.pojo.PojoMethodMapping@6811f481}
+2025-10-14 15:36:15,446 [http-nio-9802-exec-1] INFO  c.c.w.c.SpringWebSocketConfigurator - headers: {upgrade=[websocket], host=[localhost:9802], sec-websocket-key=[jtAcLCpSuTpkI5ZOFRBAXA==], connection=[upgrade], sec-websocket-version=[13]}
+2025-10-14 15:36:15,456 [http-nio-9802-exec-1] INFO  c.c.ws.websocket.WsServerEndpoint - 连接建立：sessionId=0
+2025-10-14 15:36:15,501 [http-nio-9802-exec-2] INFO  c.c.ws.websocket.WsServerEndpoint - 收到消息：sessionId=0, message=ping
+2025-10-14 15:36:15,501 [http-nio-9802-exec-2] INFO  c.c.ws.websocket.WsServerEndpoint - sessionId：0 ping
+2025-10-14 15:36:15,504 [http-nio-9802-exec-2] INFO  c.c.ws.websocket.WsServerEndpoint - 收到消息：sessionId=0, message={
+  "action": "chat",
+  "payload": {
+    "prompt": "java有几种基本类型？"
+  }
+}
+2025-10-14 15:36:22,387 [http-nio-9802-exec-2] INFO  c.c.ws.websocket.WsServerEndpoint - 处理结果：Java有几种基本的类型，它们分别是：
+
+1. **`int` (整型):** 用于存储整数数值。例如：-10, 0, 10, 100
+
+2. **`float` (浮点型):** 用于存储浮点数，即带有小数点的数值。例如：3.14, -2.5, 0.0
+
+3. **`double` (双精度浮点型):**  与 `float` 类似，但具有更大的表示精度，可以处理更复杂的小数运算。  例如：3.14159, -2.536, 0.0
+
+4. **`boolean` (布尔型):** 用于存储真或假的值。例如：true, false
+
+5. **`char` (字符型):** 用于存储单个字符。例如：'a', '7', '$'
+
+6. **`String` (字符串型):**  用于存储文本数据。  字符串通常由字符组成，并且可以包含空格、标点符号等。  例如："Hello World", "Java"
+
+**总结:**
+
+| 类型     | 描述                           | 示例                 |
+| -------- | ------------------------------ | --------------------- |
+| `int`    | 整数数值                        | -10, 0, 10              |
+| `float`  | 浮点数                          | 3.14, -2.5              |
+| `double` | 双精度浮点数                     | 3.14159, -2.536         |
+| `boolean` | 真或假                           | true, false             |
+| `char`   | 字符                           | 'a', '7', '$'          |
+| `String` | 文本数据                          | "Hello World", "Java" |
+
+希望这个解释对你有帮助！
+
+2025-10-14 15:36:45,900 [http-nio-9802-exec-3] INFO  c.c.ws.websocket.WsServerEndpoint - 异常：sessionId=0, error=null
+2025-10-14 15:36:45,901 [http-nio-9802-exec-3] INFO  c.c.ws.websocket.WsServerEndpoint - 连接关闭：sessionId=0
+2025-10-14 15:45:37,153 [http-nio-9802-exec-4] INFO  c.c.w.c.SpringWebSocketConfigurator - userProperties: {org.apache.tomcat.websocket.pojo.PojoEndpoint.methodMapping=org.apache.tomcat.websocket.pojo.PojoMethodMapping@6811f481}
+2025-10-14 15:45:37,154 [http-nio-9802-exec-4] INFO  c.c.w.c.SpringWebSocketConfigurator - headers: {upgrade=[websocket], accept-language=[zh-CN,zh;q=0.9], sec-websocket-extensions=[permessage-deflate; client_max_window_bits], origin=[https://websocketking.com], host=[localhost:9802], connection=[Upgrade], sec-websocket-key=[uKwnwgULaYy76OKRx+ipag==], cache-control=[no-cache], sec-websocket-version=[13], pragma=[no-cache], accept-encoding=[gzip, deflate, br, zstd], user-agent=[Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36]}
+2025-10-14 15:45:37,158 [http-nio-9802-exec-4] INFO  c.c.ws.websocket.WsServerEndpoint - 连接建立：sessionId=1
+2025-10-14 15:45:44,358 [http-nio-9802-exec-5] INFO  c.c.ws.websocket.WsServerEndpoint - 收到消息：sessionId=1, message=1
+2025-10-14 15:45:44,365 [http-nio-9802-exec-5] INFO  c.c.ws.websocket.WsServerEndpoint - 异常：sessionId=1, error=offset 1, character 1, line 1, column 1, fastjson-version 2.0.53 1
+2025-10-14 15:45:44,366 [http-nio-9802-exec-5] INFO  c.c.ws.websocket.WsServerEndpoint - 连接关闭：sessionId=1
+2025-10-14 15:46:08,775 [http-nio-9802-exec-6] INFO  c.c.w.c.SpringWebSocketConfigurator - userProperties: {org.apache.tomcat.websocket.pojo.PojoEndpoint.methodMapping=org.apache.tomcat.websocket.pojo.PojoMethodMapping@6811f481}
+2025-10-14 15:46:08,776 [http-nio-9802-exec-6] INFO  c.c.w.c.SpringWebSocketConfigurator - headers: {upgrade=[websocket], accept-language=[zh-CN,zh;q=0.9], sec-websocket-extensions=[permessage-deflate; client_max_window_bits], origin=[https://websocketking.com], host=[localhost:9802], connection=[Upgrade], sec-websocket-key=[BjtiXcIu3YowO5cHNzCYnw==], cache-control=[no-cache], sec-websocket-version=[13], pragma=[no-cache], accept-encoding=[gzip, deflate, br, zstd], user-agent=[Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36]}
+2025-10-14 15:46:08,779 [http-nio-9802-exec-6] INFO  c.c.ws.websocket.WsServerEndpoint - 连接建立：sessionId=2
+2025-10-14 15:46:10,505 [http-nio-9802-exec-7] INFO  c.c.ws.websocket.WsServerEndpoint - 收到消息：sessionId=2, message=气温
+2025-10-14 15:46:10,507 [http-nio-9802-exec-7] INFO  c.c.ws.websocket.WsServerEndpoint - 异常：sessionId=2, error=offset 1, character 气, line 1, column 1, fastjson-version 2.0.53 气温
+2025-10-14 15:46:10,509 [http-nio-9802-exec-7] INFO  c.c.ws.websocket.WsServerEndpoint - 连接关闭：sessionId=2

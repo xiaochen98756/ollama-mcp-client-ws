@@ -1,0 +1,9 @@
+server:
+  port: 9802
+  servlet:
+    context-path: /mcp
+spring:
+  application:
+    name: ollama-spring-mcp-client-ws
+  profiles:
+    active: prod
