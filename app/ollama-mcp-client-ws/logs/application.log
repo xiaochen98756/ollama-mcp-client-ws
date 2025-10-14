@@ -290,3 +290,93 @@ Ollama  就像一个 “AI 蓝图”，它帮你轻松地“搭建” AI 模型�
 2025-10-14 15:46:10,505 [http-nio-9802-exec-7] INFO  c.c.ws.websocket.WsServerEndpoint - 收到消息：sessionId=2, message=气温
 2025-10-14 15:46:10,507 [http-nio-9802-exec-7] INFO  c.c.ws.websocket.WsServerEndpoint - 异常：sessionId=2, error=offset 1, character 气, line 1, column 1, fastjson-version 2.0.53 气温
 2025-10-14 15:46:10,509 [http-nio-9802-exec-7] INFO  c.c.ws.websocket.WsServerEndpoint - 连接关闭：sessionId=2
+2025-10-14 17:00:42,067 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Starting OllamaMcpClientWsApplication using Java 17.0.12 with PID 72729 (/Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws/target/classes started by wangxiaochen in /Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws)
+2025-10-14 17:00:42,068 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - The following 1 profile is active: "prod"
+2025-10-14 17:00:42,614 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-9802"]
+2025-10-14 17:00:42,615 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-10-14 17:00:42,615 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-10-14 17:00:42,648 [main] INFO  o.a.c.c.C.[.[localhost].[/mcp] - Initializing Spring embedded WebApplicationContext
+2025-10-14 17:00:43,060 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-9802"]
+2025-10-14 17:00:43,081 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Started OllamaMcpClientWsApplication in 1.305 seconds (process running for 1.597)
+2025-10-14 17:07:32,192 [http-nio-9802-exec-2] INFO  o.a.c.c.C.[.[localhost].[/mcp] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-10-14 17:07:32,193 [http-nio-9802-exec-2] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-10-14 17:07:32,195 [http-nio-9802-exec-2] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2025-10-14 17:08:19,952 [http-nio-9802-exec-1] INFO  c.c.ws.controller.ChatController - 查询工具列表
+2025-10-14 17:08:29,496 [http-nio-9802-exec-4] INFO  c.c.ws.controller.ChatController - 查询工具列表
+2025-10-14 17:09:09,847 [http-nio-9802-exec-7] INFO  c.c.ws.controller.ChatController - 收到 ping 请求
+2025-10-14 17:09:46,859 [http-nio-9802-exec-9] WARN  o.s.w.s.m.s.DefaultHandlerExceptionResolver - Resolved [org.springframework.http.converter.HttpMessageNotReadableException: Required request body is missing: public org.springframework.http.ResponseEntity<java.lang.String> com.client.ws.controller.ChatController.chat(com.alibaba.fastjson2.JSONObject)]
+2025-10-14 17:10:15,488 [http-nio-9802-exec-10] INFO  c.c.ws.controller.ChatController - 收到对话请求：prompt=java有几种基本类型？
+2025-10-14 17:10:26,758 [http-nio-9802-exec-10] INFO  c.c.ws.controller.ChatController - 对话结果：Java 拥有多种基本类型，它们是数据类型，定义了变量可以存储的含义。以下是 Java 中一些基本类型以及它们的特点：
+
+**1. 整数 (Integer)**
+
+*   **定义:** 整数是一种可以表示无符号整数的数值类型。
+*   **特点:**
+    *   可以表示任意大小的整数（例如：-123, 0, 100, 1000）。
+    *   通常是数值类型，没有小数。
+*   **例子:** `10`, `-5`, `0`, `1000`
+
+**2. 浮点数 (Float)**
+
+*   **定义:** 浮点数是一种可以表示任意精度小数的数值类型。
+*   **特点:**
+    *   可以表示更精细的数值，例如：3.14, -2.718, 0.0.
+    *   精度取决于 `double` 类型。
+*   **例子:** `3.14`, `-2.718`, `0.0`
+
+**3. 字符串 (String)**
+
+*   **定义:** 字符串是一种按指定字符组合排列的文本数据类型。
+*   **特点:**
+    *   可以存储文本内容，例如：“Hello, World!”
+    *   通常是单行文本，可以在其中进行各种操作，如连接、查找、替换等。
+*   **例子:** `"Hello, World!"`, "Java编程"
+
+**4. 字符 (Char)**
+
+*   **定义:** 字符是一种表示特定符号的数值类型，通常代表字母、数字或特殊字符。
+*   **特点:**
+    *   表示单个字符，例如：'A', '1', '5'
+    *   通常用于表示字符编码，例如：在文本处理中。
+*   **例子:** `'A'`, `'1'`, `'5'`
+
+**5. 布尔值 (Boolean)**
+
+*   **定义:** 布尔值是一种表示真或假值的类型。
+*   **特点:**
+    *   通常表示一个值，是真 (true) 或假 (false)。
+    *   用于判断条件，例如：`true` 表示真，`false` 表示假。
+*   **例子:** `true`, `false`
+
+**总结表格:**
+
+| 类型       | 描述                                  | 精度        | 特点                               |
+| ---------- | ------------------------------------- | ---------- | ---------------------------------- |
+| 整数       | 可以表示任意大小的整数                  | 任意       |  数值类型，无小数                  |
+| 浮点数     | 可以表示任意精度小数                   |  任意       | 精度取决于 `double` 类型                  |
+| 字符串       | 按指定字符排列的文本数据                 |  单行文本   |  可以进行文本操作                   |
+| 字符       | 表示特定符号的数值数据                   |  单字符     |  用于字符编码                       |
+| 布尔值     | 表示真或假值的类型                      |  任意       |  用于判断条件                           |
+
+希望以上信息能够帮助你理解 Java 中基本类型！  如果你想了解某个特定类型的类型，请告诉我。
+
+2025-10-14 17:11:08,023 [http-nio-9802-exec-1] INFO  c.c.ws.controller.ChatController - 收到对话请求：prompt=基于上一个问题，int 类型的取值范围是多少？
+2025-10-14 17:11:11,952 [http-nio-9802-exec-1] INFO  c.c.ws.controller.ChatController - 对话结果：好的，根据我们之前的讨论（假设我们之前讨论的是关于 int 类型的一种特定问题），我来回答你的问题。
+
+**根据一般情况，int 类型可以取值范围从非常小到非常大的任何数字。 具体范围取决于你使用的操作系统和特定的 int 类型实现。**
+
+以下是一些更具体的例子：
+
+*   **最低值：**  根据不同的操作系统和硬件，int 类型可以设置为 -2147483648 (最小值) 到 2147483647 (最大值)  (这通常是 Windows 系统下的 int 类型)。
+*   **最大值：**  int 类型可以最大值取值范围是 -2147483648 到 2147483647 (取决于具体的实现)。
+
+**要更准确地回答你的问题，请告诉我你感兴趣的具体 int 类型或具体的应用场景。**
+
+例如，如果你问的是：
+
+*   “C++ 的 int 类型？”
+*   “Python 的 int 类型？”
+
+我可以提供更精准的答案。
+
+请告诉我你想了解什么，我会尽力提供更详细的信息。
