@@ -10,10 +10,11 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
-import org.springframework.ai.openai.OpenAiChatModel;
+import org.springframework.ai.openai.OpenAiChatModel; // 保持使用 OpenAiChatModel
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
@@ -30,115 +31,114 @@ import java.util.Objects;
 @Service
 public class ChatService {
 
+    // 从配置文件读取参数
+    @Value("${spring.ai.openai.base-url}")
+    private String openAiBaseUrl;
+
+    @Value("${spring.ai.openai.api-key}")
+    private String openAiApiKey;
+
+    @Value("${spring.ai.openai.chat.options.model}") // 注意：1.0.0-M7 用 chat 配置模型
+    private String llmModelId;
+
     private final ChatClient chatClient;
+
     private final RestTemplate restTemplate;
     @Getter
     private final ToolCallback[] toolCallbacks;
 
-    // -------------------------- 1. 核心配置（比赛时仅需修改这里） --------------------------
-    // 组委会 API 基础地址（Mock 用本地地址，比赛时替换为组委会真实地址：http://api.example.com:30000）
-    private static final String API_BASE_URL = "http://localhost:10000";
-    // 组委会分配的鉴权信息（Mock 用 VALID_APP_ID/VALID_APP_KEY，比赛时替换为真实值）
-    private static final String APP_ID = "team_123";
-    private static final String APP_KEY = "key_456abc";
-    // 工具名 → API 路径映射（与文档完全一致）
+    // 工具API映射（不变）
     private static final Map<String, String> TOOL_API_MAP = Map.of(
-            "credit-card-tool", "/mock/credit-card/monthly-bill",       // 信用卡账单
-            "exchange-rate-tool", "/mock/exchange-rate",                // 汇率服务
-            "utility-bill-tool", "/mock/utility-bill/monthly-bill",     // 水电煤账单
-            "user-asset-tool", "/mock/user/assets",                     // 用户资产
-            "payment-order-tool", "/mock/qr/create-payment-order"       // 支付订单
+            "credit-card-tool", "/mock/credit-card/monthly-bill",
+            "exchange-rate-tool", "/mock/exchange-rate",
+            "utility-bill-tool", "/mock/utility-bill/monthly-bill",
+            "user-asset-tool", "/mock/user/assets",
+            "payment-order-tool", "/mock/qr/create-payment-order"
     );
 
-    // -------------------------- 2. 系统提示（引导模型输出 GET 参数格式） --------------------------
+    // 系统提示（不变）
     private static final String SYSTEM_PROMPT = "你是组委会API工具调用助手，严格遵守以下规则：" +
-            "1. 必须输出「工具名:参数JSON」格式，仅保留这部分内容，不要任何多余文字（包括解释、换行、空格）；" +
-            "2. 参数JSON必须是标准格式：" +
-            "   - 用{}包裹，键名必须用双引号（\"\"），字符串值必须用双引号；" +
-            "   - 键值对之间用逗号分隔，不能有多余逗号；" +
-            "   - 示例：{\"cardNumber\":\"6211111111111111\",\"month\":\"2025-09\"}" +
+            "1. 必须输出「工具名:参数JSON」格式，仅保留这部分内容，不要任何多余文字；" +
+            "2. 参数JSON必须是标准格式：用{}包裹，键名和字符串值用双引号，无多余逗号；" +
             "3. 各工具参数要求：" +
-            "   - 信用卡账单（credit-card-tool）：必须含cardNumber、month（格式YYYY-MM）；" +
-            "   - 汇率服务（exchange-rate-tool）：必须含fromCurrency、toCurrency，可选amount；" +
-            "   - 水电煤账单（utility-bill-tool）：必须含householdId、month，可选utilityType；" +
-            "   - 用户资产（user-asset-tool）：必须含customerId，可选assetType；" +
-            "   - 支付订单（payment-order-tool）：必须含merchantId、orderId，可选amount；" +
+            "   - 信用卡账单（credit-card-tool）：cardNumber、month（YYYY-MM）；" +
+            "   - 汇率服务（exchange-rate-tool）：fromCurrency、toCurrency，可选amount；" +
+            "   - 水电煤账单（utility-bill-tool）：householdId、month，可选utilityType；" +
+            "   - 用户资产（user-asset-tool）：customerId，可选assetType；" +
+            "   - 支付订单（payment-order-tool）：merchantId、orderId，可选amount；" +
             "4. 非工具问题直接输出「非工具调用类问题」。";
 
-    // -------------------------- 3. 标准化错误提示 --------------------------
+    // 错误提示（不变）
     private static final String API_TIMEOUT_MSG = "工具 API 调用超时";
     private static final String API_ERROR_MSG = "工具 API 调用失败";
     private static final String PARAM_ERROR_MSG = "工具参数缺失或格式错误";
     private static final String AUTH_ERROR_MSG = "工具鉴权失败，请检查 AppId/AppKey";
     private static final String SYSTEM_ERROR_MSG = "系统繁忙，请重试";
 
-    // -------------------------- 构造方法 --------------------------
-
-    public ChatService(OpenAiChatModel openAiChatModel,  // 核心改动：替换为 OpenAI 模型
+    // 构造方法（使用 OpenAiChatModel，适配 1.0.0-M7）
+    public ChatService(OpenAiChatModel openAiChatModel,  // 保持使用 ChatModel
                        List<McpSyncClient> mcpSyncClientList,
                        RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
 
-
-        // 初始化 MCP 工具（兼容后续扩展，当前主要用 HTTP 工具）
+        // 初始化 MCP 工具（不变）
         ToolCallbackProvider toolCallbackProvider = new SyncMcpToolCallbackProvider(mcpSyncClientList);
         this.toolCallbacks = Objects.nonNull(toolCallbackProvider.getToolCallbacks())
                 ? (ToolCallback[]) toolCallbackProvider.getToolCallbacks()
                 : new ToolCallback[0];
 
-        // 初始化 ChatClient：绑定 OpenAI 模型（其他配置不变）
-        this.chatClient = ChatClient.builder(openAiChatModel)  // 这里传入 OpenAiChatModel
+        // 初始化 ChatClient：绑定 ChatModel，但配置为兼容 Completion 接口
+        this.chatClient = ChatClient.builder(openAiChatModel)
                 .defaultTools(toolCallbacks)
-                .defaultOptions(ChatOptions.builder().model("./generate/Qwen3-0.6B-Q8_0.gguf").temperature(0.1).maxTokens(1024).build())
+                .defaultOptions(ChatOptions.builder()
+                        .model(llmModelId)  // 模型ID（./generate/Qwen3-0.6B-Q8_0.gguf）
+                        .temperature(0.1)
+                        .maxTokens(1024)
+                        .build())
                 .build();
         log.info("当前模型名：{}", openAiChatModel.getDefaultOptions().getModel());
-        log.info("OpenAI 兼容模型初始化完成");
+        log.info("本地 vllm 模型（OpenAI 兼容）初始化完成");
     }
 
-    // -------------------------- 核心调用方法 --------------------------
+    // 核心调用方法（不变）
     public String askQuestion(SystemMessage systemMessage, UserMessage userMessage) {
         try {
-            // 1. 生成工具调用指令（工具名:参数Map）
             String toolCmd = generateToolCommand(systemMessage, userMessage);
             log.info("模型生成工具指令：{}", toolCmd);
 
-            // 2. 过滤非工具调用
             if (toolCmd.contains("非工具调用类问题")) {
                 return toolCmd;
             }
 
-            // 3. 解析指令（拆分工具名和参数）
             String[] cmdParts = toolCmd.split(":", 2);
             if (cmdParts.length != 2) {
                 throw new IllegalArgumentException(PARAM_ERROR_MSG + "：" + toolCmd);
             }
 
-            // 核心修复：提取纯工具名（仅保留字母、数字、横线、下划线）
             String rawToolName = cmdParts[0].trim();
-            String toolName = rawToolName.replaceAll("[^a-zA-Z0-9_-]", ""); // 过滤所有非允许字符
+            String toolName = rawToolName.replaceAll("[^a-zA-Z0-9_-]", "");
 
-            // 验证工具名是否有效
             if (toolName.isEmpty() || !TOOL_API_MAP.containsKey(toolName)) {
                 throw new IllegalArgumentException("无效的工具名：" + rawToolName);
             }
             String paramJson = cmdParts[1].trim()
-                    // 1. 移除首尾可能的冗余大括号
-                    .replaceAll("^\\{+", "{")  // 开头多个{保留一个
-                    .replaceAll("}+$", "}")    // 结尾多个}保留一个
-                    // 2. 移除键值对后的多余逗号（如 {"a":1,}）
+                    .replaceAll("^\\{+", "{")
+                    .replaceAll("}+$", "}")
                     .replaceAll(",\\s*}", "}");
             Map<String, Object> params = JSON.parseObject(paramJson, Map.class);
 
-            // 4. 调用组委会 API
+            // 调用组委会 API（可改为 @Value 注入）
+            String apiBaseUrl = "http://localhost:10000";
+            String appId = "team_123";
+            String appKey = "key_456abc";
             String apiPath = TOOL_API_MAP.get(toolName);
             if (apiPath == null) {
                 return "未支持的工具：" + toolName;
             }
-            String apiUrl = API_BASE_URL + apiPath;
-            return callGetApi(apiUrl, params);
+            String apiUrl = apiBaseUrl + apiPath;
+            return callGetApi(apiUrl, params, appId, appKey);
 
         } catch (HttpClientErrorException e) {
-            // 鉴权失败（401/403）或参数错误（400）
             log.error("API 调用错误（状态码：{}）", e.getStatusCode(), e);
             return e.getStatusCode().is4xxClientError()
                     ? (e.getMessage().contains("鉴权") ? AUTH_ERROR_MSG : PARAM_ERROR_MSG)
@@ -149,52 +149,48 @@ public class ChatService {
         }
     }
 
-    // -------------------------- 辅助方法：生成工具指令 --------------------------
+    // 核心修改：生成工具指令时用 prompt() 传递纯文本（模拟 Completion 接口）
     private String generateToolCommand(SystemMessage systemMessage, UserMessage userMessage) {
-        // 1. 空值校验 + 正确拼接提示词（用 getText() 适配 1.0.0-M7）
+        // 1. 拼接纯文本 prompt（系统提示 + 用户问题）
         String userSystemPrompt = (systemMessage != null && systemMessage.getText() != null)
                 ? systemMessage.getText()
                 : "";
-        String fullPrompt = userSystemPrompt + "\n" + SYSTEM_PROMPT;
-        log.info("向模型发送的完整系统提示：{}", fullPrompt);
-        log.info("向模型发送的用户消息：{}", userMessage.getText());
+        // 关键：用纯文本格式，符合 vllm Completion 接口的 "prompt" 字段要求
+        String fullPrompt = String.format("系统提示：%s\n用户问题：%s\n请严格按照系统提示输出结果：",
+                userSystemPrompt + SYSTEM_PROMPT,
+                userMessage.getText());
+        log.info("向本地模型发送的完整 prompt：{}", fullPrompt);
 
-        // 2. 调用模型生成指令：显式指定 model（强制覆盖所有默认值）
-        return chatClient.prompt()
-                .messages(new SystemMessage(fullPrompt), userMessage)
+        // 2. 调用模型：用 prompt() 而非 messages()，避免生成 messages 数组格式
+        return chatClient
+                .prompt(fullPrompt)  // 传递纯文本 prompt，适配 Completion 接口
                 .options(ChatOptions.builder()
-                        .model("./generate/Qwen3-0.6B-Q8_0.gguf") // 必须与本地模型 ID 一致
+                        .model(llmModelId)
                         .temperature(0.1)
                         .maxTokens(1024)
                         .build())
                 .call()
-                .content();
+                .content()
+                .trim();
     }
 
-    // -------------------------- 辅助方法：调用 GET API（带鉴权头+URL参数） --------------------------
-    private String callGetApi(String apiUrl, Map<String, Object> params) {
-        // 1. 构建鉴权头
+    // 调用 GET API 方法（不变）
+    private String callGetApi(String apiUrl, Map<String, Object> params, String appId, String appKey) {
         HttpHeaders headers = new HttpHeaders();
-        headers.set("X-App-Id", APP_ID);
-        headers.set("X-App-Key", APP_KEY);
+        headers.set("X-App-Id", appId);
+        headers.set("X-App-Key", appKey);
 
-        // 2. 构建 GET 参数（URL 拼接用）
         MultiValueMap<String, String> urlParams = new LinkedMultiValueMap<>();
         params.forEach((key, value) -> urlParams.add(key, value.toString()));
 
-        // 3. 构造请求（GET 方法需用 HttpEntity 传递头，参数通过 URL 拼接）
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(headers);
         String fullUrl = buildGetUrl(apiUrl, urlParams);
         log.info("调用 GET API：{}", fullUrl);
 
-        // 4. 发起请求并解析响应
         Map<String, Object> response = restTemplate.getForObject(fullUrl, Map.class);
-
-        // 5. 格式化响应结果（按比赛要求返回关键信息，避免冗长）
         return formatResponse(response);
     }
 
-    // -------------------------- 辅助方法：拼接 GET URL 参数 --------------------------
+    // 拼接 URL 参数（不变）
     private String buildGetUrl(String baseUrl, MultiValueMap<String, String> params) {
         if (params.isEmpty()) {
             return baseUrl;
@@ -205,68 +201,48 @@ public class ChatService {
                 urlBuilder.append(key).append("=").append(value).append("&");
             }
         });
-        // 移除最后一个 "&"
         return urlBuilder.substring(0, urlBuilder.length() - 1);
     }
 
-    // -------------------------- 辅助方法：格式化响应（突出关键信息） --------------------------
+    // 格式化响应（不变，增加空指针防护）
     private String formatResponse(Map<String, Object> response) {
+        if (response == null) {
+            return SYSTEM_ERROR_MSG;
+        }
         if (response.containsKey("card_number")) {
-            // 信用卡账单：返回卡号、总金额、状态
             return String.format("信用卡账单（%s）：卡号=%s，总金额=%.2f%s，状态=%s，截止日期=%s",
-                    response.get("bill_month"),
-                    response.get("card_number"),
-                    response.get("total_amount"),
-                    response.get("currency"),
-                    response.get("payment_status"),
-                    response.get("due_date"));
+                    response.get("bill_month"), response.get("card_number"),
+                    response.get("total_amount"), response.get("currency"),
+                    response.get("payment_status"), response.get("due_date"));
         } else if (response.containsKey("from_currency")) {
-            // 汇率服务：返回转换结果
             return String.format("汇率转换：%.2f%s = %.2f%s（汇率：%s），更新时间=%s",
-                    response.get("amount"),
-                    response.get("from_currency"),
-                    response.get("converted_amount"),
-                    response.get("to_currency"),
-                    response.get("rate"),
-                    response.get("timestamp"));
+                    response.get("amount"), response.get("from_currency"),
+                    response.get("converted_amount"), response.get("to_currency"),
+                    response.get("rate"), response.get("timestamp"));
         } else if (response.containsKey("utility_type")) {
-            // 水电煤账单：返回户号、金额、用量
             return String.format("水电煤账单（%s-%s）：户号=%s，用量=%.2f%s，金额=%.2f%s，状态=%s",
-                    response.get("bill_month"),
-                    response.get("utility_type"),
-                    response.get("household_id"),
-                    response.get("usage_amount"),
-                    response.get("usage_unit"),
-                    response.get("bill_amount"),
-                    response.get("currency"),
-                    response.get("payment_status"));
+                    response.get("bill_month"), response.get("utility_type"),
+                    response.get("household_id"), response.get("usage_amount"),
+                    response.get("usage_unit"), response.get("bill_amount"),
+                    response.get("currency"), response.get("payment_status"));
         } else if (response.containsKey("cards") || response.containsKey("households")) {
-            // 用户资产：返回资产数量
             String assetType = response.containsKey("cards") ? "信用卡" : "房产";
             int count = response.containsKey("cards")
                     ? ((List<?>) response.get("cards")).size()
                     : ((List<?>) response.get("households")).size();
             return String.format("用户资产（%s）：用户ID=%s，共%s个%s资产",
-                    assetType,
-                    response.get("customer_id"),
-                    count,
-                    assetType);
+                    assetType, response.get("customer_id"), count, assetType);
         } else if (response.containsKey("payment_order_id")) {
-            // 支付订单：返回订单ID、状态
             return String.format("支付订单创建成功：订单ID=%s，商户号=%s，金额=%.2f%s，状态=%s，过期时间=%s",
-                    response.get("payment_order_id"),
-                    response.get("merchant_id"),
-                    response.get("amount"),
-                    "CNY", // 文档默认货币
-                    response.get("payment_status"),
-                    response.get("expire_time"));
+                    response.get("payment_order_id"), response.get("merchant_id"),
+                    response.get("amount"), "CNY",
+                    response.get("payment_status"), response.get("expire_time"));
         } else {
-            // 未知响应格式：返回原始数据（便于调试）
             return "工具响应：" + response.toString();
         }
     }
 
-    // -------------------------- 重载方法：默认使用系统提示 --------------------------
+    // 重载方法（不变）
     public String askQuestion(Message message) {
         return askQuestion(new SystemMessage(""), new UserMessage(message.getText()));
     }
