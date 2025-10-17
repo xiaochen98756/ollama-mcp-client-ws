@@ -41,23 +41,27 @@ public class ChatService {
     private static final String APP_KEY = "key_456abc";
     // 工具名 → API 路径映射（与文档完全一致）
     private static final Map<String, String> TOOL_API_MAP = Map.of(
-            "credit-card-tool", "/api/credit-card/monthly-bill",       // 信用卡账单
-            "exchange-rate-tool", "/api/exchange-rate",                // 汇率服务
-            "utility-bill-tool", "/api/utility-bill/monthly-bill",     // 水电煤账单
-            "user-asset-tool", "/api/user/assets",                     // 用户资产
-            "payment-order-tool", "/api/qr/create-payment-order"       // 支付订单
+            "credit-card-tool", "/mock/credit-card/monthly-bill",       // 信用卡账单
+            "exchange-rate-tool", "/mock/exchange-rate",                // 汇率服务
+            "utility-bill-tool", "/mock/utility-bill/monthly-bill",     // 水电煤账单
+            "user-asset-tool", "/mock/user/assets",                     // 用户资产
+            "payment-order-tool", "/mock/qr/create-payment-order"       // 支付订单
     );
 
     // -------------------------- 2. 系统提示（引导模型输出 GET 参数格式） --------------------------
-    private static final String SYSTEM_PROMPT = "你是组委会 API 工具调用助手，严格遵守以下规则：" +
-            "1. 先判断问题对应工具，再输出「工具名:参数Map」，仅保留这部分内容，不要多余文字；" +
-            "2. 工具与参数要求：" +
-            "   - 信用卡账单（credit-card-tool）：参数必须含 cardNumber(信用卡号)、month(YYYY-MM)，如 {\"cardNumber\":\"6211111111111111\",\"month\":\"2025-09\"}；" +
-            "   - 汇率服务（exchange-rate-tool）：参数必须含 fromCurrency、toCurrency，可选 amount（默认1），如 {\"fromCurrency\":\"USD\",\"toCurrency\":\"CNY\",\"amount\":100}；" +
-            "   - 水电煤账单（utility-bill-tool）：参数必须含 householdId、month(YYYY-MM)，可选 utilityType（默认electricity），如 {\"householdId\":\"BJ001234567\",\"month\":\"2025-09\",\"utilityType\":\"water\"}；" +
-            "   - 用户资产（user-asset-tool）：参数必须含 customerId(身份证)，可选 assetType（默认card），如 {\"customerId\":\"110101199003072845\",\"assetType\":\"household\"}；" +
-            "   - 支付订单（payment-order-tool）：参数必须含 merchantId、orderId，可选 amount（默认0），如 {\"merchantId\":\"M123456\",\"orderId\":\"ORD2025001\",\"amount\":100.50}；" +
-            "3. 非工具问题直接输出「非工具调用类问题」。";
+    private static final String SYSTEM_PROMPT = "你是组委会API工具调用助手，严格遵守以下规则：" +
+            "1. 必须输出「工具名:参数JSON」格式，仅保留这部分内容，不要任何多余文字（包括解释、换行、空格）；" +
+            "2. 参数JSON必须是标准格式：" +
+            "   - 用{}包裹，键名必须用双引号（\"\"），字符串值必须用双引号；" +
+            "   - 键值对之间用逗号分隔，不能有多余逗号；" +
+            "   - 示例：{\"cardNumber\":\"6211111111111111\",\"month\":\"2025-09\"}" +
+            "3. 各工具参数要求：" +
+            "   - 信用卡账单（credit-card-tool）：必须含cardNumber、month（格式YYYY-MM）；" +
+            "   - 汇率服务（exchange-rate-tool）：必须含fromCurrency、toCurrency，可选amount；" +
+            "   - 水电煤账单（utility-bill-tool）：必须含householdId、month，可选utilityType；" +
+            "   - 用户资产（user-asset-tool）：必须含customerId，可选assetType；" +
+            "   - 支付订单（payment-order-tool）：必须含merchantId、orderId，可选amount；" +
+            "4. 非工具问题直接输出「非工具调用类问题」。";
 
     // -------------------------- 3. 标准化错误提示 --------------------------
     private static final String API_TIMEOUT_MSG = "工具 API 调用超时";
@@ -103,8 +107,22 @@ public class ChatService {
             if (cmdParts.length != 2) {
                 throw new IllegalArgumentException(PARAM_ERROR_MSG + "：" + toolCmd);
             }
-            String toolName = cmdParts[0].trim();
-            Map<String, Object> params = JSON.parseObject(cmdParts[1].trim(), Map.class);
+
+            // 核心修复：提取纯工具名（仅保留字母、数字、横线、下划线）
+            String rawToolName = cmdParts[0].trim();
+            String toolName = rawToolName.replaceAll("[^a-zA-Z0-9_-]", ""); // 过滤所有非允许字符
+
+            // 验证工具名是否有效
+            if (toolName.isEmpty() || !TOOL_API_MAP.containsKey(toolName)) {
+                throw new IllegalArgumentException("无效的工具名：" + rawToolName);
+            }
+            String paramJson = cmdParts[1].trim()
+                    // 1. 移除首尾可能的冗余大括号
+                    .replaceAll("^\\{+", "{")  // 开头多个{保留一个
+                    .replaceAll("}+$", "}")    // 结尾多个}保留一个
+                    // 2. 移除键值对后的多余逗号（如 {"a":1,}）
+                    .replaceAll(",\\s*}", "}");
+            Map<String, Object> params = JSON.parseObject(paramJson, Map.class);
 
             // 4. 调用组委会 API
             String apiPath = TOOL_API_MAP.get(toolName);

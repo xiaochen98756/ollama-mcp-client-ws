@@ -21,7 +21,7 @@ import java.util.Objects;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api") // 与组委会 API 前缀一致
+@RequestMapping("/mock") // 与组委会 API 前缀一致
 public class OrgToolMockController {
 
     // -------------------------- 通用配置 --------------------------
@@ -32,15 +32,15 @@ public class OrgToolMockController {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
-    // -------------------------- 鉴权拦截（所有接口通用） --------------------------
-    @ModelAttribute
-    public void validateAuth(@RequestHeader("X-App-Id") String appId,
-                             @RequestHeader("X-App-Key") String appKey) {
-        // 模拟鉴权校验（不通过则抛异常）
-        if (!VALID_APP_ID.equals(appId) || !VALID_APP_KEY.equals(appKey)) {
-            throw new RuntimeException("鉴权失败：无效的 X-App-Id 或 X-App-Key");
-        }
-    }
+//    // -------------------------- 鉴权拦截（所有接口通用） --------------------------
+//    @ModelAttribute
+//    public void validateAuth(@RequestHeader("X-App-Id") String appId,
+//                             @RequestHeader("X-App-Key") String appKey) {
+//        // 模拟鉴权校验（不通过则抛异常）
+//        if (!VALID_APP_ID.equals(appId) || !VALID_APP_KEY.equals(appKey)) {
+//            throw new RuntimeException("鉴权失败：无效的 X-App-Id 或 X-App-Key");
+//        }
+//    }
 
     // -------------------------- 1. 信用卡账单服务 --------------------------
     @GetMapping("/credit-card/monthly-bill")
