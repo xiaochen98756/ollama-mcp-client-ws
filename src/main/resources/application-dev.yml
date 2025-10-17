@@ -1,8 +1,42 @@
+# 生产环境：适配组委会 API 工具 + Ollama 模型
 spring:
   ai:
-    ollama:
-      base-url: http://localhost:11434
-      default-model: gemma3:1b
+    # 移除原有 ollama 配置，替换为 openai 配置
+    openai:
+      base-url: http://localhost:8000/v1  # 你的本地模型服务地址（必须带 /v1 后缀，兼容 OpenAI 协议）
+      api-key: dummy  # 本地服务无需真实 API Key，填任意非空值即可（如 "dummy"）
       chat:
-        model: gemma3:1b
+        options:
+          model: ./generate/Qwen3-0.6B-Q8_0.gguf  # 模型 ID（与你 curl 输出的 id 完全一致）
+          temperature: 0.1  # 保持与之前相同的随机性
+          max-tokens: 1024  # 最大响应长度，与工具调用适配
+    mcp:
+      client:
+        enabled: false  # 启用 MCP 客户端（即使不用本地工具，也需开启避免初始化失败）
+        type: SYNC  # 同步调用模式（适配比赛单题超时逻辑）
+        request-timeout: 120000  # 120秒，与比赛单题超时一致
+        # 本地工具配置（若后续用本地工具，启用此段；当前用 HTTP 工具，留空配置）
+        stdio:
+          servers-configuration: classpath:/mcp-stdio-prod.json  # 空配置文件路径
+          log-process-output: false  # 禁用本地工具日志，减少资源占用
 
+# 3. 日志配置（精简输出，避免比赛服务器磁盘占用）
+logging:
+  level:
+    root: INFO
+    com.client.ws.mcp: INFO  # 自定义 MCP 服务日志（关键调用打印 INFO）
+    org.springframework.ai: INFO  # AI 模块日志，避免冗余
+    org.springframework.web: WARN  # Web 模块仅打印警告及以上日志
+    org.springframework.web.client.RestTemplate: DEBUG
+  file:
+    name: /var/log/ollama-mcp-client.log  # 日志输出路径（比赛服务器可写目录）
+    max-size: 100MB  # 单文件最大 100MB
+    max-history: 5  # 保留 5 个历史日志文件
+
+# 4. 自定义配置：组委会 API 鉴权信息（供 ChatService 读取，比赛时替换为真实值）
+org:
+  unionpay:
+    api:
+      base-url: http://localhost:10000  # Mock 服务地址，比赛时改为组委会真实地址
+      app-id: team_123  # 组委会分配的 AppId，比赛时替换
+      app-key: key_456abc  # 组委会分配的 AppKey，比赛时替换

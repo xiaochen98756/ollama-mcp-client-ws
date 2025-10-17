@@ -73,7 +73,7 @@ public class ChatService {
     private static final String SYSTEM_ERROR_MSG = "系统繁忙，请重试";
 
     // -------------------------- 构造方法 --------------------------
-    @Autowired
+
     public ChatService(OpenAiChatModel openAiChatModel,  // 核心改动：替换为 OpenAI 模型
                        List<McpSyncClient> mcpSyncClientList,
                        RestTemplate restTemplate) {
