@@ -3,7 +3,7 @@ spring:
   ai:
     # 移除原有 ollama 配置，替换为 openai 配置
     openai:
-      base-url: http://localhost:8000/v1  # 你的本地模型服务地址（必须带 /v1 后缀，兼容 OpenAI 协议）
+      base-url: http://localhost:8000  # 你的本地模型服务地址（必须带 /v1 后缀，兼容 OpenAI 协议）
       api-key: dummy  # 本地服务无需真实 API Key，填任意非空值即可（如 "dummy"）
       chat:
         options:
