@@ -8,10 +8,12 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
@@ -71,10 +73,12 @@ public class ChatService {
     private static final String SYSTEM_ERROR_MSG = "系统繁忙，请重试";
 
     // -------------------------- 构造方法 --------------------------
+    @Autowired
     public ChatService(OpenAiChatModel openAiChatModel,  // 核心改动：替换为 OpenAI 模型
                        List<McpSyncClient> mcpSyncClientList,
                        RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
+
 
         // 初始化 MCP 工具（兼容后续扩展，当前主要用 HTTP 工具）
         ToolCallbackProvider toolCallbackProvider = new SyncMcpToolCallbackProvider(mcpSyncClientList);
@@ -85,8 +89,9 @@ public class ChatService {
         // 初始化 ChatClient：绑定 OpenAI 模型（其他配置不变）
         this.chatClient = ChatClient.builder(openAiChatModel)  // 这里传入 OpenAiChatModel
                 .defaultTools(toolCallbacks)
+                .defaultOptions(ChatOptions.builder().model("./generate/Qwen3-0.6B-Q8_0.gguf").temperature(0.1).maxTokens(1024).build())
                 .build();
-
+        log.info("当前模型名：{}", openAiChatModel.getDefaultOptions().getModel());
         log.info("OpenAI 兼容模型初始化完成");
     }
 
@@ -146,10 +151,22 @@ public class ChatService {
 
     // -------------------------- 辅助方法：生成工具指令 --------------------------
     private String generateToolCommand(SystemMessage systemMessage, UserMessage userMessage) {
-        // 合并用户提示和系统提示（确保模型按规则输出）
-        String fullPrompt = systemMessage.getText() + "\n" + SYSTEM_PROMPT;
+        // 1. 空值校验 + 正确拼接提示词（用 getText() 适配 1.0.0-M7）
+        String userSystemPrompt = (systemMessage != null && systemMessage.getText() != null)
+                ? systemMessage.getText()
+                : "";
+        String fullPrompt = userSystemPrompt + "\n" + SYSTEM_PROMPT;
+        log.info("向模型发送的完整系统提示：{}", fullPrompt);
+        log.info("向模型发送的用户消息：{}", userMessage.getText());
+
+        // 2. 调用模型生成指令：显式指定 model（强制覆盖所有默认值）
         return chatClient.prompt()
                 .messages(new SystemMessage(fullPrompt), userMessage)
+                .options(ChatOptions.builder()
+                        .model("./generate/Qwen3-0.6B-Q8_0.gguf") // 必须与本地模型 ID 一致
+                        .temperature(0.1)
+                        .maxTokens(1024)
+                        .build())
                 .call()
                 .content();
     }
