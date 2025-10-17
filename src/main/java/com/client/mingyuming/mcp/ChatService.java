@@ -71,7 +71,7 @@ public class ChatService {
     private static final String SYSTEM_ERROR_MSG = "系统繁忙，请重试";
 
     // -------------------------- 构造方法 --------------------------
-    public ChatService(OpenAiChatModel openAiChatModel,
+    public ChatService(OpenAiChatModel openAiChatModel,  // 核心改动：替换为 OpenAI 模型
                        List<McpSyncClient> mcpSyncClientList,
                        RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -82,12 +82,12 @@ public class ChatService {
                 ? (ToolCallback[]) toolCallbackProvider.getToolCallbacks()
                 : new ToolCallback[0];
 
-        // 初始化 ChatClient（绑定工具逻辑）
-        this.chatClient = ChatClient.builder(openAiChatModel)
+        // 初始化 ChatClient：绑定 OpenAI 模型（其他配置不变）
+        this.chatClient = ChatClient.builder(openAiChatModel)  // 这里传入 OpenAiChatModel
                 .defaultTools(toolCallbacks)
                 .build();
 
-        log.info("组委会 API 工具初始化完成，可用工具：{}", TOOL_API_MAP.keySet());
+        log.info("OpenAI 兼容模型初始化完成");
     }
 
     // -------------------------- 核心调用方法 --------------------------

@@ -1,14 +1,23 @@
 package com.client.mingyuming;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.ApplicationContext;
 
+@Slf4j
 @SpringBootApplication
+@EnableAutoConfiguration
 public class AIApplication {
 
     public static void main(String[] args) {
-        ConfigurableApplicationContext context = SpringApplication.run(AIApplication.class, args);
-    }
-
+        try {
+            ApplicationContext context = SpringApplication.run(AIApplication.class, args);
+            String[] beans= context.getBeanDefinitionNames();
+            log.info("启动成功！{}",beans);
+        }catch (Exception e){
+            log.error("启动失败",e);
+        }
+      }
 }
