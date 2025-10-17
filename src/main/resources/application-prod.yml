@@ -1,6 +1,32 @@
 spring:
   ai:
+    # Ollama 模型配置
     ollama:
-      base-url: http://localhost:11434
+      base-url: http://localhost:11434  # 比赛服务器本地 Ollama 地址
       chat:
-        model: gemma3:1b
+        model: qwen3-1b  # 比赛提供的指定模型
+        options:
+          temperature: 0.1  # 降低随机性，确保工具调用指令稳定
+          max-tokens: 2048  #
+    # MCP 客户端配置（工具调用核心，按比赛工具部署方式二选一）
+    mcp:
+      client:
+        enabled: false  # 必须开启，否则无法调用工具
+        type: SYNC  # 同步调用，适配比赛单题 120 秒超时逻辑
+        request-timeout: 120000  # 120秒，与比赛单题超时完全对齐
+        # 场景1：比赛工具为本地 Jar（组委会预装在服务器，启用此段）
+        stdio:
+          servers-configuration: classpath:/mcp-stdio-prod.json  # 比赛工具配置文件路径
+          log-process-output: false  # 禁用工具日志，避免占用服务器资源
+        # 场景2：比赛工具为远程 SSE 服务（启用此段，注释 stdio）
+        # sse:
+        #   servers-configuration: classpath:/mcp-sse-prod.json
+        #   connect-timeout: 3000  # 3秒连接超时，快速判断服务可用性
+#logging:
+#  level:
+#    root: DEBUG  # 开启全局 DEBUG，捕捉启动异常
+#    org.springframework: DEBUG  # Spring 容器初始化日志
+#    org.springframework.ai: DEBUG  # AI/MCP 模块日志
+#    io.modelcontextprotocol: DEBUG  # MCP 协议日志
+#  pattern:
+#    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"  # 显示完整日志上下文

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "dev-exchange-tool": {
+      "command": "python",
+      "args": ["src/main/resources/scripts/dev_exchange_tool.py"],
+      "env": {"PYTHONPATH": "${user.dir}/src/main/resources/scripts"}
+    },
+    "dev-fee-tool": {
+      "command": "java",
+      "args": ["-jar", "src/main/resources/jars/dev_fee_tool.jar"]
+    }
+  }
+}
