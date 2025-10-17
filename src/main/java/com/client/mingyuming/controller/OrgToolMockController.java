@@ -1,4 +1,4 @@
-package com.client.ws.controller;
+package com.client.mingyuming.controller;
 
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * 完全对齐组委会 API 格式的 Mock 服务

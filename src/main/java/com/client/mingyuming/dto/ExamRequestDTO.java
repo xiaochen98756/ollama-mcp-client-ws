@@ -1,4 +1,4 @@
-package com.client.ws.dto;
+package com.client.mingyuming.dto;
 
 import lombok.Data;
 

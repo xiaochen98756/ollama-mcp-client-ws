@@ -1,8 +1,8 @@
-package com.client.ws.controller;
+package com.client.mingyuming.controller;
 
-import com.client.ws.dto.ExamRequestDTO;
-import com.client.ws.dto.ExamResponseDTO;
-import com.client.ws.mcp.ChatService;
+import com.client.mingyuming.dto.ExamRequestDTO;
+import com.client.mingyuming.dto.ExamResponseDTO;
+import com.client.mingyuming.mcp.ChatService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.SystemMessage;

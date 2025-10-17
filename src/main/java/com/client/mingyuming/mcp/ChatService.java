@@ -1,4 +1,4 @@
-package com.client.ws.mcp;
+package com.client.mingyuming.mcp;
 
 import com.alibaba.fastjson2.JSON;
 import io.modelcontextprotocol.client.McpSyncClient;

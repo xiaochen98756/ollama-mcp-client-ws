@@ -1,8 +1,8 @@
-package com.client.ws.controller;
+package com.client.mingyuming.controller;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
-import com.client.ws.mcp.ChatService;
+import com.client.mingyuming.mcp.ChatService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.SystemMessage;
