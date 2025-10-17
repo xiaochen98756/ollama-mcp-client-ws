@@ -37,11 +37,6 @@
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
         <!-- mcp-client -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
@@ -49,13 +44,11 @@
             <version>1.0.0-M7</version>
         </dependency>
 
-        <!-- model-ollama -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-model-ollama</artifactId>
-            <version>1.0.0-M7</version>
+            <artifactId>spring-ai-openai</artifactId>
+            <version>1.0.0</version>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>

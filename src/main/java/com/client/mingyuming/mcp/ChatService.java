@@ -9,7 +9,7 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
-import org.springframework.ai.ollama.OllamaChatModel;
+import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.http.HttpEntity;
@@ -71,7 +71,7 @@ public class ChatService {
     private static final String SYSTEM_ERROR_MSG = "系统繁忙，请重试";
 
     // -------------------------- 构造方法 --------------------------
-    public ChatService(OllamaChatModel ollamaChatModel,
+    public ChatService(OpenAiChatModel openAiChatModel,
                        List<McpSyncClient> mcpSyncClientList,
                        RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
@@ -83,7 +83,7 @@ public class ChatService {
                 : new ToolCallback[0];
 
         // 初始化 ChatClient（绑定工具逻辑）
-        this.chatClient = ChatClient.builder(ollamaChatModel)
+        this.chatClient = ChatClient.builder(openAiChatModel)
                 .defaultTools(toolCallbacks)
                 .build();
 

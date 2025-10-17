@@ -1,15 +1,15 @@
 # 生产环境：适配组委会 API 工具 + Ollama 模型
 spring:
-  # 1. Ollama 模型配置（比赛服务器预装，无需修改地址）
   ai:
-    ollama:
-      base-url: http://localhost:11434  # 本地 Ollama 服务地址（文档默认）
+    # 移除原有 ollama 配置，替换为 openai 配置
+    openai:
+      base-url: http://localhost:8000/v1  # 你的本地模型服务地址（必须带 /v1 后缀，兼容 OpenAI 协议）
+      api-key: dummy  # 本地服务无需真实 API Key，填任意非空值即可（如 "dummy"）
       chat:
-        model: gemma3:1b  # 若比赛提供 Qwen3-32B，可替换为 qwen3-32b
+        model: ./generate/Qwen3-0.6B-Q8_0.gguf  # 模型 ID（与你 curl 输出的 id 完全一致）
         options:
-          temperature: 0.1  # 降低随机性，确保工具调用指令稳定
-          max-tokens: 1024  # 匹配比赛响应长度限制
-    # 2. MCP 客户端配置（兼容后续扩展，当前主要用 HTTP 工具，避免启动报错）
+          temperature: 0.1  # 保持与之前相同的随机性
+          max-tokens: 1024  # 最大响应长度，与工具调用适配
     mcp:
       client:
         enabled: false  # 启用 MCP 客户端（即使不用本地工具，也需开启避免初始化失败）

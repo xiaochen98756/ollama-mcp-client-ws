@@ -5,10 +5,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 @SpringBootApplication
-public class OllamaMcpClientWsApplication {
+public class AIApplication {
 
     public static void main(String[] args) {
-        ConfigurableApplicationContext context = SpringApplication.run(OllamaMcpClientWsApplication.class, args);
+        ConfigurableApplicationContext context = SpringApplication.run(AIApplication.class, args);
     }
 
 }

@@ -4,6 +4,6 @@ server:
     context-path: /
 spring:
   application:
-    name: ollama-spring-mcp-client-ws
+    name: spring-ai-app
   profiles:
     active: prod
