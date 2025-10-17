@@ -1,32 +1,41 @@
+# 生产环境：适配组委会 API 工具 + Ollama 模型
 spring:
+  # 1. Ollama 模型配置（比赛服务器预装，无需修改地址）
   ai:
-    # Ollama 模型配置
     ollama:
-      base-url: http://localhost:11434  # 比赛服务器本地 Ollama 地址
+      base-url: http://localhost:11434  # 本地 Ollama 服务地址（文档默认）
       chat:
-        model: qwen3-1b  # 比赛提供的指定模型
+        model: gemma3:1b  # 若比赛提供 Qwen3-32B，可替换为 qwen3-32b
         options:
           temperature: 0.1  # 降低随机性，确保工具调用指令稳定
-          max-tokens: 2048  #
-    # MCP 客户端配置（工具调用核心，按比赛工具部署方式二选一）
+          max-tokens: 1024  # 匹配比赛响应长度限制
+    # 2. MCP 客户端配置（兼容后续扩展，当前主要用 HTTP 工具，避免启动报错）
     mcp:
       client:
-        enabled: false  # 必须开启，否则无法调用工具
-        type: SYNC  # 同步调用，适配比赛单题 120 秒超时逻辑
-        request-timeout: 120000  # 120秒，与比赛单题超时完全对齐
-        # 场景1：比赛工具为本地 Jar（组委会预装在服务器，启用此段）
+        enabled: false  # 启用 MCP 客户端（即使不用本地工具，也需开启避免初始化失败）
+        type: SYNC  # 同步调用模式（适配比赛单题超时逻辑）
+        request-timeout: 120000  # 120秒，与比赛单题超时一致
+        # 本地工具配置（若后续用本地工具，启用此段；当前用 HTTP 工具，留空配置）
         stdio:
-          servers-configuration: classpath:/mcp-stdio-prod.json  # 比赛工具配置文件路径
-          log-process-output: false  # 禁用工具日志，避免占用服务器资源
-        # 场景2：比赛工具为远程 SSE 服务（启用此段，注释 stdio）
-        # sse:
-        #   servers-configuration: classpath:/mcp-sse-prod.json
-        #   connect-timeout: 3000  # 3秒连接超时，快速判断服务可用性
-#logging:
-#  level:
-#    root: DEBUG  # 开启全局 DEBUG，捕捉启动异常
-#    org.springframework: DEBUG  # Spring 容器初始化日志
-#    org.springframework.ai: DEBUG  # AI/MCP 模块日志
-#    io.modelcontextprotocol: DEBUG  # MCP 协议日志
-#  pattern:
-#    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"  # 显示完整日志上下文
+          servers-configuration: classpath:/mcp-stdio-prod.json  # 空配置文件路径
+          log-process-output: false  # 禁用本地工具日志，减少资源占用
+
+# 3. 日志配置（精简输出，避免比赛服务器磁盘占用）
+logging:
+  level:
+    root: INFO
+    com.client.ws.mcp: INFO  # 自定义 MCP 服务日志（关键调用打印 INFO）
+    org.springframework.ai: INFO  # AI 模块日志，避免冗余
+    org.springframework.web: WARN  # Web 模块仅打印警告及以上日志
+  file:
+    name: /var/log/ollama-mcp-client.log  # 日志输出路径（比赛服务器可写目录）
+    max-size: 100MB  # 单文件最大 100MB
+    max-history: 5  # 保留 5 个历史日志文件
+
+# 4. 自定义配置：组委会 API 鉴权信息（供 ChatService 读取，比赛时替换为真实值）
+org:
+  unionpay:
+    api:
+      base-url: http://localhost:10000  # Mock 服务地址，比赛时改为组委会真实地址
+      app-id: team_123  # 组委会分配的 AppId，比赛时替换
+      app-key: key_456abc  # 组委会分配的 AppKey，比赛时替换

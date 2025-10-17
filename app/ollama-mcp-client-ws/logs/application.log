@@ -4082,3 +4082,228 @@ java.lang.ClassNotFoundException: java.text.ListFormat
 2025-10-17 11:07:09,700 [main] WARN  com.client.ws.mcp.ChatService - 未加载到任何 MCP 工具！请检查 application.yml 中 MCP 客户端配置（如工具配置文件路径、MCP Server 地址）
 2025-10-17 11:07:09,864 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-10000"]
 2025-10-17 11:07:09,886 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Started OllamaMcpClientWsApplication in 43.304 seconds (process running for 43.603)
+2025-10-17 11:21:18,433 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Starting OllamaMcpClientWsApplication using Java 17.0.12 with PID 84715 (/Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws/target/classes started by wangxiaochen in /Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws)
+2025-10-17 11:21:18,435 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - The following 1 profile is active: "prod"
+2025-10-17 11:21:18,998 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-10000"]
+2025-10-17 11:21:18,999 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-10-17 11:21:18,999 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-10-17 11:21:19,029 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-10-17 11:21:21,676 [main] INFO  com.client.ws.mcp.ChatService - HTTP 工具 API 配置完成，可用工具：[service-fee-tool, exchange-rate-tool]
+2025-10-17 11:21:21,821 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-10000"]
+2025-10-17 11:21:21,842 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Started OllamaMcpClientWsApplication in 3.719 seconds (process running for 4.074)
+2025-10-17 11:21:58,592 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Starting OllamaMcpClientWsApplication using Java 17.0.12 with PID 84727 (/Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws/target/classes started by wangxiaochen in /Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws)
+2025-10-17 11:21:58,593 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - The following 1 profile is active: "prod"
+2025-10-17 11:21:59,108 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-10000"]
+2025-10-17 11:21:59,108 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-10-17 11:21:59,109 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-10-17 11:21:59,137 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-10-17 11:21:59,375 [main] INFO  o.a.catalina.core.StandardService - Stopping service [Tomcat]
+2025-10-17 11:34:24,527 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Starting OllamaMcpClientWsApplication using Java 17.0.12 with PID 85239 (/Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws/target/classes started by wangxiaochen in /Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws)
+2025-10-17 11:34:24,529 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - The following 1 profile is active: "prod"
+2025-10-17 11:34:25,050 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-10000"]
+2025-10-17 11:34:25,051 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-10-17 11:34:25,051 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-10-17 11:34:25,080 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-10-17 11:34:25,311 [main] INFO  o.a.catalina.core.StandardService - Stopping service [Tomcat]
+2025-10-17 11:34:59,032 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Starting OllamaMcpClientWsApplication using Java 17.0.12 with PID 85244 (/Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws/target/classes started by wangxiaochen in /Users/wangxiaochen/Downloads/spring-mcp-server-master/ollama-mcp-client-ws)
+2025-10-17 11:34:59,033 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - The following 1 profile is active: "prod"
+2025-10-17 11:34:59,555 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-10000"]
+2025-10-17 11:34:59,556 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-10-17 11:34:59,556 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-10-17 11:34:59,586 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-10-17 11:34:59,818 [main] INFO  com.client.ws.mcp.ChatService - 组委会 API 工具初始化完成，可用工具：[utility-bill-tool, credit-card-tool, payment-order-tool, user-asset-tool, exchange-rate-tool]
+2025-10-17 11:34:59,966 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-10000"]
+2025-10-17 11:34:59,987 [main] INFO  c.c.ws.OllamaMcpClientWsApplication - Started OllamaMcpClientWsApplication in 1.224 seconds (process running for 1.494)
+2025-10-17 11:35:33,502 [http-nio-10000-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-10-17 11:35:59,941 [http-nio-10000-exec-3] INFO  c.c.ws.controller.ExamController - 收到比赛请求：segments=初赛, paper=TEST, 试题ID=2, 问题内容=创建商户号M123456、订单号ORD2025001、金额100.5元的支付订单
+2025-10-17 11:36:01,762 [http-nio-10000-exec-3] INFO  com.client.ws.mcp.ChatService - 模型生成工具指令：非工具调用类问题，无需调用工具
+
+2025-10-17 11:36:01,762 [http-nio-10000-exec-3] INFO  c.c.ws.controller.ExamController - 试题ID=2 的工具调用结果：非工具调用类问题，无需调用工具
+
+2025-10-17 11:36:52,904 [http-nio-10000-exec-5] INFO  c.c.ws.controller.ExamController - 收到比赛请求：segments=初赛, paper=TEST, 试题ID=1, 问题内容=查询信用卡号6211111111111111的2025年9月账单
+2025-10-17 11:36:54,432 [http-nio-10000-exec-5] INFO  com.client.ws.mcp.ChatService - 模型生成工具指令：工具名: credit-card-tool
+参数Map: cardNumber:6211111111111111, month:2025-09
+2025-10-17 11:36:54,519 [http-nio-10000-exec-5] ERROR com.client.ws.mcp.ChatService - 工具调用异常
+com.alibaba.fastjson2.JSONException: offset 1, character c, line 1, column 1, fastjson-version 2.0.53 credit-card-tool
+参数Map: cardNumber:6211111111111111, month:2025-09
+	at com.alibaba.fastjson2.JSONReader.read(JSONReader.java:2005)
+	at com.alibaba.fastjson2.reader.ObjectReaderImplMap.readObject(ObjectReaderImplMap.java:453)
+	at com.alibaba.fastjson2.JSON.parseObject(JSON.java:864)
+	at com.client.ws.mcp.ChatService.askQuestion(ChatService.java:108)
+	at com.client.ws.controller.ExamController.handleExamRequest(ExamController.java:57)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:986)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:891)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1743)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+2025-10-17 11:36:54,521 [http-nio-10000-exec-5] INFO  c.c.ws.controller.ExamController - 试题ID=1 的工具调用结果：系统繁忙，请重试
+2025-10-17 11:37:48,251 [http-nio-10000-exec-7] INFO  c.c.ws.controller.ExamController - 收到比赛请求：segments=初赛, paper=TEST, 试题ID=1, 问题内容=查询信用卡号6211111111111111的2025年9月账单
+2025-10-17 11:37:49,764 [http-nio-10000-exec-7] INFO  com.client.ws.mcp.ChatService - 模型生成工具指令：工具名: credit-card-tool
+参数Map: cardNumber:6211111111111111, month:2025-09
+
+2025-10-17 11:39:48,025 [http-nio-10000-exec-7] ERROR com.client.ws.mcp.ChatService - 工具调用异常
+com.alibaba.fastjson2.JSONException: offset 1, character c, line 1, column 1, fastjson-version 2.0.53 credit-card-tool
+参数Map: cardNumber:6211111111111111, month:2025-09
+	at com.alibaba.fastjson2.JSONReader.read(JSONReader.java:2005)
+	at com.alibaba.fastjson2.reader.ObjectReaderImplMap.readObject(ObjectReaderImplMap.java:453)
+	at com.alibaba.fastjson2.JSON.parseObject(JSON.java:864)
+	at com.client.ws.mcp.ChatService.askQuestion(ChatService.java:108)
+	at com.client.ws.controller.ExamController.handleExamRequest(ExamController.java:57)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:986)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:891)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1743)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+2025-10-17 11:39:48,029 [http-nio-10000-exec-7] INFO  c.c.ws.controller.ExamController - 试题ID=1 的工具调用结果：系统繁忙，请重试
+2025-10-17 11:40:22,108 [http-nio-10000-exec-9] INFO  c.c.ws.controller.ExamController - 收到比赛请求：segments=初赛, paper=TEST, 试题ID=1, 问题内容=查询信用卡号6211111111111111的2025年9月账单
+2025-10-17 11:43:19,421 [http-nio-10000-exec-9] INFO  com.client.ws.mcp.ChatService - 模型生成工具指令：工具名: credit-card-tool
+参数Map: cardNumber:6211111111111111, month:2025-09
+2025-10-17 11:43:57,151 [http-nio-10000-exec-9] ERROR com.client.ws.mcp.ChatService - 工具调用异常
+com.alibaba.fastjson2.JSONException: offset 1, character c, line 1, column 1, fastjson-version 2.0.53 credit-card-tool
+参数Map: cardNumber:6211111111111111, month:2025-09
+	at com.alibaba.fastjson2.JSONReader.read(JSONReader.java:2005)
+	at com.alibaba.fastjson2.reader.ObjectReaderImplMap.readObject(ObjectReaderImplMap.java:453)
+	at com.alibaba.fastjson2.JSON.parseObject(JSON.java:864)
+	at com.client.ws.mcp.ChatService.askQuestion(ChatService.java:108)
+	at com.client.ws.controller.ExamController.handleExamRequest(ExamController.java:57)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:191)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:986)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:891)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014)
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:914)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:590)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:195)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:164)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:140)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:483)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:905)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1743)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1190)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:842)
+2025-10-17 11:43:57,169 [http-nio-10000-exec-9] INFO  c.c.ws.controller.ExamController - 试题ID=1 的工具调用结果：系统繁忙，请重试
