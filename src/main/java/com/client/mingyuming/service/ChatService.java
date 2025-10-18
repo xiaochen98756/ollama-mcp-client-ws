@@ -1,14 +1,15 @@
-package com.client.mingyuming.mcp;
-
+package com.client.mingyuming.service;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import io.modelcontextprotocol.client.McpSyncClient;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
-import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
@@ -17,10 +18,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * 工具 API 调用服务（仅处理工具请求）
@@ -28,7 +27,7 @@ import java.util.Objects;
 @Slf4j
 @Service
 public class ChatService {
-    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private final Gson gson = new GsonBuilder().setPrettyPrinting().setLenient().create();
     // 工具 API 配置（从配置文件注入）
     @Value("${team.api.base-url}")
     private String teamApiBaseUrl;
@@ -39,6 +38,12 @@ public class ChatService {
     @Value("${team.api.app-key}")
     private String teamAppKey;
 
+    @Autowired
+    ToolService toolService;
+    // 新增：本地工具标识（需同步告知大模型）
+    private static final String CURRENT_DATE_TOOL = "current-date-tool"; // 获取当前日期工具
+    private static final String CALCULATOR_TOOL = "calculator-tool";     // 计算器工具
+
     // 工具 API 映射
     private static final Map<String, String> TOOL_API_MAP = Map.of(
             "credit-card-tool", "/mock/credit-card/monthly-bill",
@@ -47,13 +52,17 @@ public class ChatService {
             "user-asset-tool", "/mock/user/assets",
             "payment-order-tool", "/mock/qr/create-payment-order"
     );
-
+    // 本地工具 API 映射
+    private static final Map<String, String> TOOL_CURRENT_MAP = Map.of(
+            "current-date-tool", "获取当前日期工具",
+            "calculator-tool", "计算器工具"
+    );
     // 错误提示常量
     private static final String API_TIMEOUT_MSG = "工具 API 调用超时";
     private static final String API_ERROR_MSG = "工具 API 调用失败";
-    private static final String PARAM_ERROR_MSG = "工具参数缺失或格式错误";
+    public static final String PARAM_ERROR_MSG = "工具参数缺失或格式错误";
     private static final String AUTH_ERROR_MSG = "工具鉴权失败，请检查 AppId/AppKey";
-    private static final String SYSTEM_ERROR_MSG = "系统繁忙，请重试";
+    public static final String SYSTEM_ERROR_MSG = "系统繁忙，请重试";
 
     private final RestTemplate restTemplate;
     @Getter
@@ -65,11 +74,9 @@ public class ChatService {
 
         // 初始化 MCP 工具回调
         ToolCallbackProvider toolCallbackProvider = new SyncMcpToolCallbackProvider(mcpSyncClientList);
-        this.toolCallbacks = Objects.nonNull(toolCallbackProvider.getToolCallbacks())
-                ? (ToolCallback[]) toolCallbackProvider.getToolCallbacks()
-                : new ToolCallback[0];
-
-        log.info("工具 API 服务初始化完成" + TOOL_API_MAP);
+        toolCallbackProvider.getToolCallbacks();
+        this.toolCallbacks = (ToolCallback[]) toolCallbackProvider.getToolCallbacks();
+        log.info("工具服务初始化完成!\nAPI工具:{}\n本地工具{}", gson.toJson(TOOL_API_MAP), gson.toJson(TOOL_CURRENT_MAP));
     }
 
     /**
@@ -100,24 +107,39 @@ public class ChatService {
             if ("none".equals(toolName)) {
                 return (String) toolData.getOrDefault("message", "非工具调用类问题");
             }
+            // 4. 新增：优先处理本地工具
+            // 4.1 调用当前日期工具
+            if (CURRENT_DATE_TOOL.equals(toolName)) {
+                String currentDate = toolService.getCurrentDate();
+                return "当前系统日期（东八区）：" + currentDate;
+            }
 
-            // 4. 校验工具是否支持
+            // 4.2 调用计算器工具（需要表达式参数）
+            if (CALCULATOR_TOOL.equals(toolName)) {
+                String expression = (String) toolData.get("expression"); // 从参数中获取表达式
+                return "计算结果：" + toolService.calculate(expression);
+            }
+            // 5. 校验工具是否支持
             if (!TOOL_API_MAP.containsKey(toolName)) {
                 throw new IllegalArgumentException("不支持的工具：" + toolName);
             }
 
-            // 5. 提取工具参数（移除toolName，保留其他字段）
+            // 6. 提取工具参数（移除toolName，保留其他字段）
             toolData.remove("toolName"); // 避免参数中包含toolName
             if (toolData.isEmpty()) {
                 throw new IllegalArgumentException(PARAM_ERROR_MSG + "：工具参数为空");
             }
 
-            // 6. 调用工具API
+            // 7. 调用工具API
             String apiPath = TOOL_API_MAP.get(toolName);
             String apiUrl = teamApiBaseUrl + apiPath;
             return callGetApi(apiUrl, toolData, teamAppId, teamAppKey);
 
-        }  catch (HttpClientErrorException e) {
+        } catch (JsonSyntaxException e) {
+            // 关键：打印原始输入和预处理后的内容，便于定位问题
+            log.error("JSON 解析失败！ 预处理后：{}", toolJson, e);
+            return PARAM_ERROR_MSG + "：JSON格式无效（未完全解析，可能包含多余内容）";
+        } catch (HttpClientErrorException e) {
             log.error("工具API调用错误（状态码：{}）", e.getStatusCode(), e);
             return e.getStatusCode().is4xxClientError()
                     ? (e.getMessage().contains("鉴权") ? AUTH_ERROR_MSG : PARAM_ERROR_MSG)

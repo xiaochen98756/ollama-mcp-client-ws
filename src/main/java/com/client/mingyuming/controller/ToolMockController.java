@@ -21,7 +21,7 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/mock") // 与组委会 API 前缀一致
-public class OrgToolMockController {
+public class ToolMockController {
 
     // -------------------------- 通用配置 --------------------------
     // 模拟合法鉴权信息（比赛时替换为组委会分配的真实 AppId/AppKey）

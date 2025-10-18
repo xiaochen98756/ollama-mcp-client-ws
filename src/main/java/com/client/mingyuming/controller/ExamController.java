@@ -4,8 +4,8 @@ import com.client.mingyuming.dto.ChatRequest;
 import com.client.mingyuming.dto.ChatRequest.Message;
 import com.client.mingyuming.dto.ExamRequestDTO;
 import com.client.mingyuming.dto.ExamResponseDTO;
-import com.client.mingyuming.mcp.ChatService;
-import com.client.mingyuming.service.LlmService;
+import com.client.mingyuming.service.ChatService;
+import com.client.mingyuming.service.LLMService;
 import com.client.mingyuming.service.MysqlQueryService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -29,12 +29,12 @@ public class ExamController {
     private final Gson gson = new GsonBuilder()
             .setPrettyPrinting()  // 关键：启用格式化输出
             .create();
-    private final LlmService llmService;       // 大模型调用服务
+    private final LLMService llmService;       // 大模型调用服务
     private final ChatService chatService;     // 工具 API 调用服务
     private final MysqlQueryService mysqlQueryService; // MySQL 查询服务
 
     // 注入两个核心服务
-    public ExamController(LlmService llmService, ChatService chatService, MysqlQueryService mysqlQueryService) {
+    public ExamController(LLMService llmService, ChatService chatService, MysqlQueryService mysqlQueryService) {
         this.llmService = llmService;
         this.chatService = chatService;
         this.mysqlQueryService = mysqlQueryService;
@@ -58,7 +58,7 @@ public class ExamController {
             // 原有工具调用题处理逻辑（保持不变）
             response = handleToolCall(requestDTO);
         }
-        log.info("返回应答：{}", gson.toJson(requestDTO));
+        log.info("返回应答：{}", gson.toJson(response));
         return response;
     }
 
@@ -130,9 +130,19 @@ public class ExamController {
                 "2. JSON必须包含字段：" +
                 "   - toolName：工具名称（如credit-card-tool、exchange-rate-tool）；" +
                 "   - 对应工具的参数（如信用卡工具需cardNumber、month）；" +
-                "3. 信用卡账单工具示例：" +
-                "   {\"toolName\":\"credit-card-tool\", \"cardNumber\":\"6211111111111111\", \"month\":\"2025-09\"}" +
-                "4. 非工具调用问题，输出：{\"toolName\":\"none\", \"message\":\"非工具调用类问题\"}");
+                "3. 支持的工具列表：" +
+                "   - API工具：" +
+                "     - credit-card-tool：查询信用卡账单，参数cardNumber（卡号）、month（账单月，格式YYYY-MM）；" +
+                "     - exchange-rate-tool：汇率转换，参数fromCurrency（源币种）、toCurrency（目标币种）、amount（金额）；" +
+                "     - （其他原有API工具...）" +
+                "   - 本地工具：" +
+                "     1. current-date-tool（获取当前日期）：无参数，JSON格式示例：{\"toolName\":\"current-date-tool\"}；" +
+                "     2. calculator-tool（数学计算）：" +
+                "        - 必传参数：expression（数学表达式，如\"3+5*2\"、\"sqrt(64)+3^3\"）；" +
+                "        - 禁止参数：message（无需提前计算结果，仅传递表达式）；" +
+                "        - JSON格式示例：{\"toolName\":\"calculator-tool\",\"expression\":\"3+5*2\"}；" +  // 明确示例
+                "4. 非工具调用问题，输出：{\"toolName\":\"none\", \"message\":\"非工具调用类问题\"}" +
+                "5. 若为 calculator-tool，必须传递 expression 参数，否则直接返回调用失败。");
         messages.add(systemMsg);
 
         // 2.2 用户问题（合并 question 和 content）

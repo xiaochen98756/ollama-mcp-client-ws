@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
-public class LlmService {
+public class LLMService {
     // 从配置文件注入大模型参数
     @Value("${spring.ai.openai.base-url}")
     private String openAiBaseUrl;
@@ -34,7 +34,7 @@ public class LlmService {
     private final RestTemplate restTemplate;
 
     // 仅依赖 RestTemplate，构造方法注入
-    public LlmService(RestTemplate restTemplate) {
+    public LLMService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
@@ -84,7 +84,7 @@ public class LlmService {
             log.info("大模型原始输出：{}", rawContent);
 
             // 提取JSON的核心逻辑
-            String jsonResult = extractJson(rawContent);
+            String jsonResult = preprocessJson(rawContent);
 
             log.info("大模型调用成功，生成内容：{}",jsonResult);
             return jsonResult;
@@ -94,19 +94,42 @@ public class LlmService {
             throw new RuntimeException("大模型调用异常：" + e.getMessage());
         }
     }
+
     /**
-     * 从原始输出中提取JSON字符串（处理多余内容、格式错误等）
+     * JSON 预处理：从末尾提取最后一个完整 JSON 串，清理格式后返回（适配大模型先描述后输出 JSON 的场景）
      */
-    private String extractJson(String rawContent) {
-        String content = rawContent.trim();
-        // 移除可能的标签
-        content = content.replaceAll("``", "");
-        // 提取JSON部分（从第一个{到最后一个}）
-        int startIdx = content.indexOf("{");
-        int endIdx = content.lastIndexOf("}");
-        if (startIdx != -1 && endIdx != -1 && endIdx > startIdx) {
-            return content.substring(startIdx, endIdx + 1).trim();
+    private String preprocessJson(String json) {
+        if (json == null || json.trim().isEmpty()) {
+            return json;
         }
-        return content; // 非JSON情况（如错误提示）
+
+        // 1. 关键优化：从末尾反向查找最后一个完整的 JSON 片段（{} 包裹）
+        int lastJsonEnd = json.lastIndexOf("}"); // 先找最后一个 "}"（JSON 结束符）
+        int lastJsonStart = -1;
+        if (lastJsonEnd != -1) {
+            // 从最后一个 "}" 往前找第一个 "{"（匹配对应的 JSON 开始符）
+            lastJsonStart = json.lastIndexOf("{", lastJsonEnd);
+        }
+
+        // 验证找到的片段是否是完整 JSON（必须同时找到 { 和 }，且 { 在 } 前面）
+        if (lastJsonStart != -1 && lastJsonEnd != -1 && lastJsonStart < lastJsonEnd) {
+            // 提取最后一个 {} 包裹的内容（这是大模型最终输出的目标 JSON）
+            json = json.substring(lastJsonStart, lastJsonEnd + 1);
+            log.debug("从末尾提取到的纯 JSON 片段：{}", json);
+        } else {
+            // 未找到完整 JSON，返回原内容并告警（便于定位问题）
+            log.warn("未找到完整 JSON 结构（输入：{}），可能不是有效 JSON", json.length() > 100 ? json.substring(0, 100) + "..." : json);
+            return json;
+        }
+
+        // 2. 保留原有格式清理逻辑（处理 JSON 内部的不规范格式）
+        String noCommentJson = json.replaceAll("//.*|/\\*[\\s\\S]*?\\*/", ""); // 去除单行/多行注释
+        String noSingleQuoteJson = noCommentJson.replaceAll("'", "\""); // 单引号转双引号（JSON 要求双引号）
+        String trimJson = noSingleQuoteJson.trim(); // 去除 JSON 内部首尾多余空格
+
+        // 3. 额外处理：去除 JSON 内部可能的换行符（避免 Gson 解析换行符报错）
+        String noLineBreakJson = trimJson.replaceAll("\\r?\\n", " ");
+
+        return noLineBreakJson;
     }
 }

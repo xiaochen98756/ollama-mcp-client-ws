@@ -74,7 +74,23 @@
             <artifactId>hutool-all</artifactId>
             <version>5.8.37</version>
         </dependency>
-
+        <!-- GraalVM JavaScript 引擎（解决 Java 11+ 无 JavaScript 引擎问题） -->
+        <dependency>
+            <groupId>org.graalvm.js</groupId>
+            <artifactId>js</artifactId>
+            <version>22.3.2</version> <!-- 稳定版本，兼容 Java 17 -->
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.js</groupId>
+            <artifactId>js-scriptengine</artifactId>
+            <version>22.3.2</version>
+        </dependency>
+        <!-- GraalVM 依赖传递（确保引擎正常加载） -->
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>graal-sdk</artifactId>
+            <version>22.3.2</version>
+        </dependency>
         <!-- lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
