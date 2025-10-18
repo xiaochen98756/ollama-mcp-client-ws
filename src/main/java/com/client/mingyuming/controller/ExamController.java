@@ -10,6 +10,7 @@ import com.client.mingyuming.service.MysqlQueryService;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,6 +34,8 @@ public class ExamController {
     private final ChatService chatService;     // 工具 API 调用服务
     private final MysqlQueryService mysqlQueryService; // MySQL 查询服务
 
+    @Value("${llm.system.prompt}")
+    private String systemPrompt;
     // 注入两个核心服务
     public ExamController(LLMService llmService, ChatService chatService, MysqlQueryService mysqlQueryService) {
         this.llmService = llmService;
@@ -125,24 +128,7 @@ public class ExamController {
         Message systemMsg = new Message();
         systemMsg.setRole("system");
         // 原系统提示词基础上，增加更严格的格式约束
-        systemMsg.setContent("你是银联比赛的工具调用助手，严格遵守以下规则：" +
-                "1. 仅输出标准JSON字符串，不包含任何其他内容（无思考过程、无标签）；" +
-                "2. JSON必须包含字段：" +
-                "   - toolName：工具名称（如credit-card-tool、exchange-rate-tool）；" +
-                "   - 对应工具的参数（如信用卡工具需cardNumber、month）；" +
-                "3. 支持的工具列表：" +
-                "   - API工具：" +
-                "     - credit-card-tool：查询信用卡账单，参数cardNumber（卡号）、month（账单月，格式YYYY-MM）；" +
-                "     - exchange-rate-tool：汇率转换，参数fromCurrency（源币种）、toCurrency（目标币种）、amount（金额）；" +
-                "     - （其他原有API工具...）" +
-                "   - 本地工具：" +
-                "     1. current-date-tool（获取当前日期）：无参数，JSON格式示例：{\"toolName\":\"current-date-tool\"}；" +
-                "     2. calculator-tool（数学计算）：" +
-                "        - 必传参数：expression（数学表达式，如\"3+5*2\"、\"sqrt(64)+3^3\"）；" +
-                "        - 禁止参数：message（无需提前计算结果，仅传递表达式）；" +
-                "        - JSON格式示例：{\"toolName\":\"calculator-tool\",\"expression\":\"3+5*2\"}；" +  // 明确示例
-                "4. 非工具调用问题，输出：{\"toolName\":\"none\", \"message\":\"非工具调用类问题\"}" +
-                "5. 若为 calculator-tool，必须传递 expression 参数，否则直接返回调用失败。");
+        systemMsg.setContent(systemPrompt);
         messages.add(systemMsg);
 
         // 2.2 用户问题（合并 question 和 content）
