@@ -16,6 +16,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,7 +67,7 @@ public class ChatService {
                 ? (ToolCallback[]) toolCallbackProvider.getToolCallbacks()
                 : new ToolCallback[0];
 
-        log.info("工具 API 服务初始化完成");
+        log.info("工具 API 服务初始化完成"+TOOL_API_MAP);
     }
 
     /**

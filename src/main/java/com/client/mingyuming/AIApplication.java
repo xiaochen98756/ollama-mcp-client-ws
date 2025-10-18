@@ -19,10 +19,7 @@ public class AIApplication {
         try {
             ApplicationContext context = SpringApplication.run(AIApplication.class, args);
             String[] beans= context.getBeanDefinitionNames();
-            Arrays.stream(beans)
-                    .filter(name -> name.contains("chatService") || name.contains("chatClient"))
-                    .forEach(name -> log.info("已加载的 Bean：" + name));
-            log.info("启动成功！{}",beans);
+            log.info("启动成功！{}",Arrays.stream(beans).toList());
         }catch (Exception e){
             log.error("启动失败",e);
         }
