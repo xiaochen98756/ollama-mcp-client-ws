@@ -1,70 +1,92 @@
 package com.client.mingyuming.controller;
 
+import com.client.mingyuming.dto.ChatRequest;
+import com.client.mingyuming.dto.ChatRequest.Message;
 import com.client.mingyuming.dto.ExamRequestDTO;
 import com.client.mingyuming.dto.ExamResponseDTO;
 import com.client.mingyuming.mcp.ChatService;
-import lombok.AllArgsConstructor;
+import com.client.mingyuming.service.LlmService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.messages.SystemMessage;
-import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * 比赛专用接口控制器（对外提供 /api/exam 接口）
+ * 比赛专用接口控制器（核心入口）
  */
 @Slf4j
 @RestController
-@AllArgsConstructor
-@RequestMapping("/api") // 基础路径
+@RequestMapping("/api")
 public class ExamController {
-    @Autowired
-    private final ChatService chatService;
+    private final LlmService llmService;       // 大模型调用服务
+    private final ChatService chatService;     // 工具 API 调用服务
+
+    // 注入两个核心服务
+    public ExamController(LlmService llmService, ChatService chatService) {
+        this.llmService = llmService;
+        this.chatService = chatService;
+    }
 
     /**
-     * 比赛核心接口：接收工具调用/知识问答等请求，返回标准化响应
-     * 接口地址：http://[服务器IP]:10000/api/exam
-     * 请求方式：POST
-     *  Content-Type：application/json
+     * 比赛核心接口：/api/exam
+     * 流程：接收请求 → 调用大模型生成工具指令 → 调用工具 API → 返回结果
      */
     @PostMapping("/exam")
     public ResponseEntity<ExamResponseDTO> handleExamRequest(
             @RequestBody ExamRequestDTO requestDTO) {
-        // 1. 日志打印请求信息，便于调试
+        // 1. 日志打印请求信息
         log.info("收到比赛请求：segments={}, paper={}, 试题ID={}, 问题内容={}",
                 requestDTO.getSegments(), requestDTO.getPaper(),
                 requestDTO.getId(), requestDTO.getQuestion());
 
-        // 2. 构建系统提示，引导 AI 仅处理工具调用（可根据比赛工具类型扩展）
-        SystemMessage systemMsg = new SystemMessage(
-                "你是银联比赛的工具调用助手，仅处理以下工具相关请求：" +
-                        "1. 汇率换算工具：当问题含「汇率」「换算」「外币」等关键词时调用；" +
-                        "2. 手续费计算工具：当问题含「手续费」「收费」「成本」等关键词时调用；" +
-                        "3. 若不是工具调用问题，直接返回「非工具调用类问题，无需调用工具」；" +
-                        "4. 工具调用结果需简洁，仅返回计算结果（如数字、字符串），无需额外说明。"
-        );
+        // 2. 构建大模型请求（系统提示 + 用户问题）
+        ChatRequest chatRequest = new ChatRequest();
+        List<Message> messages = new ArrayList<>();
 
-        // 3. 构建用户问题（合并 question 和 content，避免遗漏信息）
+        // 2.1 系统提示（工具调用规则）
+        Message systemMsg = new Message();
+        systemMsg.setRole("system");
+        // 原系统提示词基础上，增加更严格的格式约束
+        systemMsg.setContent("你是银联比赛的工具调用助手，严格遵守以下规则：" +
+                "1. 仅输出标准JSON字符串，不包含任何其他内容（无思考过程、无标签）；" +
+                "2. JSON必须包含字段：" +
+                "   - toolName：工具名称（如credit-card-tool、exchange-rate-tool）；" +
+                "   - 对应工具的参数（如信用卡工具需cardNumber、month）；" +
+                "3. 信用卡账单工具示例：" +
+                "   {\"toolName\":\"credit-card-tool\", \"cardNumber\":\"6211111111111111\", \"month\":\"2025-09\"}" +
+                "4. 非工具调用问题，输出：{\"toolName\":\"none\", \"message\":\"非工具调用类问题\"}");
+        messages.add(systemMsg);
+
+        // 2.2 用户问题（合并 question 和 content）
+        Message userMsg = new Message();
         String userQuestion = requestDTO.getQuestion() +
                 (requestDTO.getContent() != null ? "\n补充信息：" + requestDTO.getContent() : "");
-        UserMessage userMsg = new UserMessage(userQuestion);
+        userMsg.setRole("user");
+        userMsg.setContent(userQuestion);
+        messages.add(userMsg);
 
-        // 4. 调用 ChatService 触发工具调用（复用现有 MCP 客户端逻辑）
-        String toolCallResult = chatService.askQuestion(systemMsg, userMsg);
-        log.info("试题ID={} 的工具调用结果：{}", requestDTO.getId(), toolCallResult);
+        chatRequest.setMessages(messages);
 
-        // 5. 封装响应（严格匹配比赛格式要求）
+        // 3. 调用大模型生成工具指令
+        String toolCmd = llmService.generateResponse(chatRequest);
+        log.info("试题ID={}，大模型生成工具指令：{}", requestDTO.getId(), toolCmd);
+
+        // 4. 调用工具 API 执行指令
+        String toolResult = chatService.callToolApi(toolCmd);
+        log.info("试题ID={}，工具调用结果：{}", requestDTO.getId(), toolResult);
+
+        // 5. 封装响应并返回
         ExamResponseDTO responseDTO = new ExamResponseDTO();
-        responseDTO.setSegments(requestDTO.getSegments()); // 与请求一致
-        responseDTO.setPaper(requestDTO.getPaper());       // 与请求一致
-        responseDTO.setId(requestDTO.getId());             // 与请求一致
-        responseDTO.setAnswer(toolCallResult);             // 工具调用结果/答案
+        responseDTO.setSegments(requestDTO.getSegments());
+        responseDTO.setPaper(requestDTO.getPaper());
+        responseDTO.setId(requestDTO.getId());
+        responseDTO.setAnswer(toolResult);
 
-        // 6. 返回 200 OK 响应
         return ResponseEntity.ok(responseDTO);
     }
 }

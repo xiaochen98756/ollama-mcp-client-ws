@@ -34,9 +34,8 @@ logging:
     max-history: 5  # 保留 5 个历史日志文件
 
 # 4. 自定义配置：组委会 API 鉴权信息（供 ChatService 读取，比赛时替换为真实值）
-org:
-  unionpay:
-    api:
-      base-url: http://localhost:10000  # Mock 服务地址，比赛时改为组委会真实地址
-      app-id: team_123  # 组委会分配的 AppId，比赛时替换
-      app-key: key_456abc  # 组委会分配的 AppKey，比赛时替换
+team:
+  api:
+    base-url: http://localhost:10000  # 工具 API 地址
+    app-id: team_123                  # 工具鉴权 AppId
+    app-key: key_456abc               # 工具鉴权 AppKey
