@@ -7,6 +7,8 @@ import com.client.mingyuming.dto.ExamResponseDTO;
 import com.client.mingyuming.mcp.ChatService;
 import com.client.mingyuming.service.LlmService;
 import com.client.mingyuming.service.MysqlQueryService;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +26,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 public class ExamController {
+    private final Gson gson = new GsonBuilder()
+            .setPrettyPrinting()  // 关键：启用格式化输出
+            .create();
     private final LlmService llmService;       // 大模型调用服务
     private final ChatService chatService;     // 工具 API 调用服务
     private final MysqlQueryService mysqlQueryService; // MySQL 查询服务
@@ -43,18 +48,20 @@ public class ExamController {
     public ResponseEntity<ExamResponseDTO> handleExamRequest(
             @RequestBody ExamRequestDTO requestDTO) {
         //打印请求信息
-        log.info("收到比赛请求：segments={}, paper={}, 试题ID={}, 问题内容={}",
-                requestDTO.getSegments(), requestDTO.getPaper(),
-                requestDTO.getId(), requestDTO.getQuestion());
+        log.info("收到请求：{}", gson.toJson(requestDTO));
+        ResponseEntity<ExamResponseDTO> response;
         // 区分请求类型：工具调用题 / 数据查询题
         if (isDataQueryQuestion(requestDTO)) {
             // 数据查询题处理逻辑
-            return handleDataQuery(requestDTO);
+            response = handleDataQuery(requestDTO);
         } else {
             // 原有工具调用题处理逻辑（保持不变）
-            return handleToolCall(requestDTO);
+            response = handleToolCall(requestDTO);
         }
+        log.info("返回应答：{}", gson.toJson(requestDTO));
+        return response;
     }
+
     /**
      * 处理数据查询题：生成 SQL → 执行查询 → 返回结果
      */
@@ -103,7 +110,7 @@ public class ExamController {
     private boolean isDataQueryQuestion(ExamRequestDTO requestDTO) {
         // 示例：根据问题包含"SQL"、"查询"等关键词判断
         String question = requestDTO.getQuestion().toLowerCase();
-        return question.contains("sql") || question.contains("查询")||question.contains("SQL");
+        return question.contains("sql") || question.contains("查询") || question.contains("SQL");
     }
 
     /**

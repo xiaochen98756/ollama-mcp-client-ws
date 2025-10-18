@@ -12,7 +12,7 @@ import java.util.Arrays;
 @Slf4j
 @SpringBootApplication
 @EnableAutoConfiguration
-@ComponentScan(basePackages = {"com.client.mingyuming"}) // 确保包含所有需要扫描的包
+@ComponentScan(basePackages = {"com.client.mingyuming"})
 public class AIApplication {
 
     public static void main(String[] args) {

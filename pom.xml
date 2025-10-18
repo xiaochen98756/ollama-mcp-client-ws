@@ -11,10 +11,10 @@
     </parent>
 
     <groupId>com.client.ws</groupId>
-    <artifactId>ollama-mcp-client-ws</artifactId>
+    <artifactId>spring-ai-mingyuming</artifactId>
     <version>0.0.1</version>
-    <name>ollama-mcp-client-ws</name>
-    <description>ollama-mcp-client-ws</description>
+    <name>spring-ai-mingyuming</name>
+    <description>spring-ai-mingyuming</description>
     <url/>
     <licenses>
         <license/>
@@ -53,7 +53,11 @@
             <artifactId>spring-ai-starter-mcp-client</artifactId>
             <version>1.0.0-M7</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version> <!-- 稳定版本，可根据需要升级 -->
+        </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
@@ -65,29 +69,18 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- 支持 Java WebSocket API -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket</artifactId>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+            <version>5.8.37</version>
         </dependency>
 
-        <!-- 用于 @ServerEndpoint 支持 -->
-        <dependency>
-            <groupId>jakarta.websocket</groupId>
-            <artifactId>jakarta.websocket-api</artifactId>
-        </dependency>
         <!-- lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
 
-        <!-- hutool -->
-        <dependency>
-            <groupId>cn.hutool</groupId>
-            <artifactId>hutool-all</artifactId>
-            <version>5.8.37</version>
-        </dependency>
 
         <!--常用工具类 -->
         <dependency>
@@ -95,12 +88,6 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
 
-        <!-- fastjson2 -->
-        <dependency>
-            <groupId>com.alibaba.fastjson2</groupId>
-            <artifactId>fastjson2</artifactId>
-            <version>2.0.53</version>
-        </dependency>
     </dependencies>
 
     <build>

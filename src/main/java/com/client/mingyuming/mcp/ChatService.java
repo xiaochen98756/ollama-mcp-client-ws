@@ -1,7 +1,8 @@
 package com.client.mingyuming.mcp;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONException;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.modelcontextprotocol.client.McpSyncClient;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ import java.util.Objects;
 @Slf4j
 @Service
 public class ChatService {
+    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     // 工具 API 配置（从配置文件注入）
     @Value("${team.api.base-url}")
     private String teamApiBaseUrl;
@@ -67,7 +69,7 @@ public class ChatService {
                 ? (ToolCallback[]) toolCallbackProvider.getToolCallbacks()
                 : new ToolCallback[0];
 
-        log.info("工具 API 服务初始化完成"+TOOL_API_MAP);
+        log.info("工具 API 服务初始化完成" + TOOL_API_MAP);
     }
 
     /**
@@ -77,12 +79,13 @@ public class ChatService {
      */
     /**
      * 调用工具 API（通过JSON中的toolName字段识别工具）
+     *
      * @param toolJson 大模型输出的完整JSON（包含toolName和参数）
      */
     public String callToolApi(String toolJson) {
         try {
             // 1. 解析JSON为Map（使用fastjson2）
-            Map<String, Object> toolData = JSON.parseObject(toolJson, Map.class);
+            Map<String, Object> toolData = gson.fromJson(toolJson, Map.class);
             if (toolData == null) {
                 throw new IllegalArgumentException(PARAM_ERROR_MSG + "：JSON格式错误");
             }
@@ -114,10 +117,7 @@ public class ChatService {
             String apiUrl = teamApiBaseUrl + apiPath;
             return callGetApi(apiUrl, toolData, teamAppId, teamAppKey);
 
-        } catch (JSONException e) { // 捕获JSON解析错误
-            log.error("JSON解析失败：{}", toolJson, e);
-            return PARAM_ERROR_MSG + "：JSON格式错误";
-        } catch (HttpClientErrorException e) {
+        }  catch (HttpClientErrorException e) {
             log.error("工具API调用错误（状态码：{}）", e.getStatusCode(), e);
             return e.getStatusCode().is4xxClientError()
                     ? (e.getMessage().contains("鉴权") ? AUTH_ERROR_MSG : PARAM_ERROR_MSG)
@@ -127,6 +127,7 @@ public class ChatService {
             return e.getMessage().contains("超时") ? API_TIMEOUT_MSG : SYSTEM_ERROR_MSG;
         }
     }
+
     // 调用 GET 类型工具 API
     private String callGetApi(String apiUrl, Map<String, Object> params, String appId, String appKey) {
         HttpHeaders headers = new HttpHeaders();
