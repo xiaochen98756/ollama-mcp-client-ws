@@ -31,7 +31,7 @@ public class MysqlQueryService {
      */
     public String executeQuery(String sql) {
         try {
-            log.info("执行 SQL 查询：{}", sql);
+            log.info("执行 MYSQL 查询：{}", sql);
 
             // 执行查询并映射结果为二维列表
             List<List<String>> resultList = jdbcTemplate.query(sql, new RowMapper<List<String>>() {

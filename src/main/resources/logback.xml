@@ -5,40 +5,32 @@
     <!-- 添加颜色转换规则 -->
     <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
 
-    <!-- 控制台输出 -->
+    <!-- 1. 控制台输出：添加 [%X{logId:-NA}] -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%clr(%d{ISO8601}){cyan} %clr([%thread]){blue} %clr(%-5level){magenta} %clr(%logger{36}){yellow} - %clr(%msg){green}%n</pattern>
+            <!-- 新增 [%X{logId:-NA}] 打印LogID -->
+            <pattern>%clr(%d{ISO8601}){cyan} %clr([%X{logId:-NA}]){red} %clr([%thread]){blue} %clr(%-5level){magenta} %clr(%logger{36}){yellow} - %clr(%msg){green}%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
 
-    <!-- 文件滚动日志 -->
+    <!-- 2. 文件滚动日志（application.log）：添加 [%X{logId:-NA}] -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/application.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOG_DIR}/application.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxHistory>30</maxHistory>
-            <timeBasedFileNamingAndTriggeringPolicy
-                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>100MB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{ISO8601} [%X{logId:-NA}] [%thread] %-5level %logger{36} - %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
 
-    <!-- 生产环境默认日志级别 -->
-    <springProfile name="prod">
-        <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="FILE"/>
-        </root>
-    </springProfile>
-
-    <!-- 调试日志 -->
+    <!-- 3. DEBUG日志文件：添加 [%X{logId:-NA}] -->
     <appender name="DEBUG_APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/debug.log</file>
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
@@ -51,47 +43,12 @@
             <maxHistory>7</maxHistory>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{ISO8601} [%X{logId:-NA}] [%thread] %-5level %logger{36} - %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
 
-    <!-- 开发环境增强日志 -->
-    <springProfile name="dev">
-        <root level="DEBUG">
-            <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="DEBUG_APPENDER"/>
-            <appender-ref ref="INFO_APPENDER"/>
-            <appender-ref ref="ERROR_APPENDER"/>
-        </root>
-    </springProfile>
-
-    <!-- 生产环境全局过滤保持原有配置 -->
-    <springProfile name="prod">
-        <logger name="*" level="INFO" additivity="false">
-            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-                <level>INFO</level>
-            </filter>
-        </logger>
-    </springProfile>
-
-    <!-- 原有第三方库日志过滤 -->
-    <logger name="org.springframework" level="INFO"/>
-    <logger name="org.springframework.boot" level="INFO"/>
-    <logger name="com.zaxxer.hikari" level="WARN"/>
-
-    <!-- 生产环境全局过滤保持原有配置 -->
-    <springProfile name="prod">
-        <logger name="*" level="INFO" additivity="false">
-            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-                <level>INFO</level>
-            </filter>
-        </logger>
-        <!-- 排除banner日志包 -->
-        <logger name="org.springframework.boot" level="INFO" additivity="false"/>
-    </springProfile>
-
-    <!-- 信息日志 -->
+    <!-- 4. INFO日志文件：添加 [%X{logId:-NA}] -->
     <appender name="INFO_APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/info.log</file>
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
@@ -104,12 +61,12 @@
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{ISO8601} [%X{logId:-NA}] [%thread] %-5level %logger{36} - %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
 
-    <!-- 错误日志 -->
+    <!-- 5. ERROR日志文件：添加 [%X{logId:-NA}] -->
     <appender name="ERROR_APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_DIR}/error.log</file>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
@@ -120,8 +77,36 @@
             <maxHistory>90</maxHistory>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{ISO8601} [%X{logId:-NA}] [%thread] %-5level %logger{36} - %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
+
+    <!-- 环境配置（保持原有，无需修改） -->
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+        <logger name="*" level="INFO" additivity="false">
+            <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+                <level>INFO</level>
+            </filter>
+        </logger>
+        <logger name="org.springframework.boot" level="INFO" additivity="false"/>
+    </springProfile>
+
+    <springProfile name="dev">
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="DEBUG_APPENDER"/>
+            <appender-ref ref="INFO_APPENDER"/>
+            <appender-ref ref="ERROR_APPENDER"/>
+        </root>
+    </springProfile>
+
+    <!-- 第三方库日志过滤（保持原有） -->
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="org.springframework.boot" level="INFO"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
 </configuration>

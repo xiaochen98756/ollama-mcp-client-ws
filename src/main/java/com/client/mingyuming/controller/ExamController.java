@@ -74,11 +74,11 @@ public class ExamController {
         try {
             // 步骤1：调用大模型生成 SQL（预留逻辑，暂时用示例 SQL 代替）
             String sql = generateSqlByLlm(requestDTO);
-            log.info("试题ID={}，生成的 SQL：{}", requestDTO.getId(), sql);
+            log.info("试题ID={}，调用大模型生成的 SQL：{}", requestDTO.getId(), sql);
 
             // 步骤2：执行 SQL 并获取结果
             String queryResult = mysqlQueryService.executeQuery(sql);
-            log.info("试题ID={}，查询结果：{}", requestDTO.getId(), queryResult);
+            log.info("试题ID={}，查询数据库得到的结果：{}", requestDTO.getId(), queryResult);
 
             // 步骤3：封装结果
             responseDTO.setAnswer(queryResult);
@@ -110,7 +110,7 @@ public class ExamController {
     private boolean isDataQueryQuestion(ExamRequestDTO requestDTO) {
         // 示例：根据问题包含"SQL"、"查询"等关键词判断
         String question = requestDTO.getQuestion().toLowerCase();
-        return question.contains("sql") || question.contains("查询") || question.contains("SQL");
+        return question.contains("sql") ;
     }
 
     /**
