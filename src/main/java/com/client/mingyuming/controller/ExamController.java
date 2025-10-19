@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -83,6 +82,15 @@ public class ExamController {
     @Value("${llm.final-result.authorization}")
     private String finalResultAuth;
 
+    // 知识问答大模型参数
+    @Value("${llm.knowledge-chat.base-url}")
+    private String knowledgeBaseUrl;
+    @Value("${llm.knowledge-chat.chat-id}")
+    private String knowledgeChatId;
+    @Value("${llm.knowledge-chat.session-id}")
+    private String knowledgeSessionId;
+    @Value("${llm.knowledge-chat.authorization}")
+    private String knowledgeAuth;
 
     // ------------------------------
     // 2. 注入服务和工具
@@ -174,27 +182,25 @@ public class ExamController {
     }
 
     /**
-     * 处理知识问答：复用原有 LLMService
+     * 处理知识问答：调用专用知识问答大模型（替换原有LLMService）
      */
     private String handleKnowledgeQa(String question) {
-        ChatRequest chatRequest = new ChatRequest();
-        List<Message> messages = new ArrayList<>();
-
-        // 系统提示
-        Message systemMsg = new Message();
-        systemMsg.setRole("system");
-        systemMsg.setContent("你是知识问答助手，直接回答用户问题，无需调用工具，仅返回纯文本答案。");
-        messages.add(systemMsg);
-
-        // 用户问题
-        Message userMsg = new Message();
-        userMsg.setRole("user");
-        userMsg.setContent(question);
-        messages.add(userMsg);
-
-        chatRequest.setMessages(messages);
-        log.info("处理知识问答：question={}", question);
-        return llmService.generateResponse(chatRequest);
+        try {
+            // 调用通用工具类，使用知识问答大模型
+            return llmHttpUtil.call(
+                    knowledgeBaseUrl,
+                    knowledgeChatId,
+                    knowledgeSessionId,
+                    knowledgeAuth,
+                    question,
+                    // 知识问答结果处理器：直接返回纯文本（无需格式处理）
+                    trimmedAnswer -> trimmedAnswer
+            );
+        } catch (Exception e) {
+            log.error("知识问答大模型调用失败：question={}", question, e);
+            // 降级处理：返回友好提示
+            return "";
+        }
     }
 
     /**
@@ -292,11 +298,14 @@ public class ExamController {
                     // 最终结果处理器：直接返回整合后的文本
                     trimmedAnswer -> trimmedAnswer
             );
-            log.info("试题ID={}，最终整合结果：{}", requestDTO.getId(), finalAnswer);
 
-            // 6. 封装最终结果
-            responseDTO.setAnswer(finalAnswer);
-
+            if("00".equals(finalAnswer.trim())){
+                responseDTO.setAnswer(result2);
+                log.info("试题ID={}，最终整合结果：{}", requestDTO.getId(), result2);
+            }else {
+                responseDTO.setAnswer(finalAnswer);
+                log.info("试题ID={}，最终整合结果：{}", requestDTO.getId(), finalAnswer);
+            }
         } catch (Exception e) {
             log.error("试题ID={}，数据查询整体处理失败", requestDTO.getId(), e);
             responseDTO.setAnswer("数据查询处理失败：" + e.getMessage());
