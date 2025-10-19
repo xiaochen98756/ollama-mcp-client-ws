@@ -21,8 +21,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 比赛专用接口控制器（核心入口）
@@ -56,6 +62,26 @@ public class ExamController {
     @Value("${llm.sql-generate.authorization}")
     private String sqlAuth;
 
+    // 数据查询大模型参数
+    @Value("${llm.data-query.base-url}")
+    private String dataQueryBaseUrl;
+    @Value("${llm.data-query.chat-id}")
+    private String dataQueryChatId;
+    @Value("${llm.data-query.session-id}")
+    private String dataQuerySessionId;
+    @Value("${llm.data-query.authorization}")
+    private String dataQueryAuth;
+
+    // 结果整合大模型参数
+    @Value("${llm.final-result.base-url}")
+    private String finalResultBaseUrl;
+    @Value("${llm.final-result.chat-id}")
+    private String finalResultChatId;
+    @Value("${llm.final-result.session-id}")
+    private String finalResultSessionId;
+    @Value("${llm.final-result.authorization}")
+    private String finalResultAuth;
+
 
     // ------------------------------
     // 2. 注入服务和工具
@@ -66,6 +92,7 @@ public class ExamController {
     private final LLMService llmService;       // 原有大模型服务（知识问答用）
     private final ChatService chatService;     // 工具 API 调用服务
     private final MysqlQueryService mysqlQueryService; // MySQL 查询服务
+    private final ExecutorService executorService; // 线程池，用于并发执行任务
 
     @Autowired
     LlmHttpUtil llmHttpUtil;
@@ -73,13 +100,14 @@ public class ExamController {
     @Value("${llm.system.prompt}")
     private String systemPrompt;
 
-    // 构造方法注入（移除 ClassifyLlmClient，改用通用工具类）
+    // 构造方法注入
     public ExamController(LLMService llmService,
                           ChatService chatService,
                           MysqlQueryService mysqlQueryService) {
         this.llmService = llmService;
         this.chatService = chatService;
         this.mysqlQueryService = mysqlQueryService;
+        this.executorService = Executors.newFixedThreadPool(2); // 初始化线程池
     }
 
     /**
@@ -169,7 +197,7 @@ public class ExamController {
     }
 
     /**
-     * 处理数据查询：通用工具类调用 SQL 生成模型
+     * 处理数据查询：双路径并发执行 + 结果归集 + 最终生成
      */
     private ResponseEntity<ExamResponseDTO> handleDataQuery(ExamRequestDTO requestDTO) {
         ExamResponseDTO responseDTO = new ExamResponseDTO();
@@ -183,38 +211,92 @@ public class ExamController {
             if (requestDTO.getContent() != null && !requestDTO.getContent().trim().isEmpty()) {
                 userQuestion += "\n补充信息：" + requestDTO.getContent().trim();
             }
+            log.info("试题ID={}，数据查询问题：{}", requestDTO.getId(), userQuestion);
 
-            // 2. 通用工具类调用 SQL 生成模 型（差异化处理器：去除 ```sql 前缀后缀）
-            String sql = llmHttpUtil.call(
-                    sqlBaseUrl,
-                    sqlChatId,
-                    sqlSessionId,
-                    sqlAuth,
-                    userQuestion,
-                    // SQL 模型 answer 处理器：提取纯 SQL
-                    trimmedAnswer -> {
-                        final String SQL_PREFIX = "```sql";
-                        final String SQL_SUFFIX = "```";
-                        // 查找前缀和后缀位置
-                        int prefixEnd = trimmedAnswer.indexOf(SQL_PREFIX);
-                        int suffixStart = trimmedAnswer.indexOf(SQL_SUFFIX, prefixEnd + SQL_PREFIX.length());
-                        if (prefixEnd == -1 || suffixStart == -1) {
-                            throw new RuntimeException("SQL 格式错误，缺少 ```sql 前缀或 ``` 后缀");
-                        }
-                        // 提取纯 SQL 并去空格
-                        return trimmedAnswer.substring(prefixEnd + SQL_PREFIX.length(), suffixStart).trim();
-                    }
+            // 2. 路径1：生成SQL → 本地执行
+            String finalUserQuestion = userQuestion;
+            Callable<String> sqlLocalTask = () -> {
+                try {
+                    // 2.1 调用SQL生成模型获取SQL
+                    String sql = llmHttpUtil.call(
+                            sqlBaseUrl,
+                            sqlChatId,
+                            sqlSessionId,
+                            sqlAuth,
+                            finalUserQuestion,
+                            // SQL处理器：提取纯SQL
+                            trimmedAnswer -> {
+                                final String SQL_PREFIX = "```sql";
+                                final String SQL_SUFFIX = "```";
+                                int prefixEnd = trimmedAnswer.indexOf(SQL_PREFIX);
+                                int suffixStart = trimmedAnswer.indexOf(SQL_SUFFIX, prefixEnd + SQL_PREFIX.length());
+                                if (prefixEnd == -1 || suffixStart == -1) {
+                                    throw new RuntimeException("SQL格式错误");
+                                }
+                                return trimmedAnswer.substring(prefixEnd + SQL_PREFIX.length(), suffixStart).trim();
+                            }
+                    );
+                    log.info("试题ID={}，路径1（生成SQL → 本地执行）生成SQL：{}", requestDTO.getId(), sql);
+
+                    // 2.2 本地执行SQL并返回结果
+                    return mysqlQueryService.executeQuery(sql);
+                } catch (Exception e) {
+                    log.error("试题ID={}，路径1执行失败", requestDTO.getId(), e);
+                    return "路径1执行失败：" + e.getMessage();
+                }
+            };
+
+            // 3. 路径2：直接调用数据查询大模型获取结果
+            String finalUserQuestion1 = userQuestion;
+            Callable<String> dataQueryModelTask = () -> {
+                try {
+                    return llmHttpUtil.call(
+                            dataQueryBaseUrl,
+                            dataQueryChatId,
+                            dataQuerySessionId,
+                            dataQueryAuth,
+                            finalUserQuestion1,
+                            // 数据查询模型处理器：直接返回结果
+                            trimmedAnswer -> trimmedAnswer
+                    );
+                } catch (Exception e) {
+                    log.error("试题ID={}，路径2执行失败", requestDTO.getId(), e);
+                    return "路径2执行失败：" + e.getMessage();
+                }
+            };
+
+            // 4. 并发执行两个任务，等待结果（超时控制：30秒）
+            List<Future<String>> futures = executorService.invokeAll(
+                    Arrays.asList(sqlLocalTask, dataQueryModelTask),
+                    30, TimeUnit.SECONDS
             );
-            log.info("试题ID={}，生成 SQL：{}", requestDTO.getId(), sql);
+            String result1 = futures.get(0).get(); // 路径1结果（本地SQL执行结果）
+            String result2 = futures.get(1).get(); // 路径2结果（数据查询模型结果）
+            log.info("试题ID={}，双路径结果归集：result1（生成SQL → 本地执行）={}, result2（直接调用数据查询大模型获取结果）={}",
+                    requestDTO.getId(), result1, result2);
 
-            // 3. 执行 SQL 并返回结果
-            String queryResult = mysqlQueryService.executeQuery(sql);
-            log.info("试题ID={}，查询结果：{}", requestDTO.getId(), queryResult);
-            responseDTO.setAnswer(queryResult);
+            // 5. 调用第三个大模型：整合两个结果生成最终答案
+            String finalQuestion = String.format(
+                    "用户问题：%s\n结果1：%s\n结果2：%s",
+                    userQuestion, result1, result2
+            );
+            String finalAnswer = llmHttpUtil.call(
+                    finalResultBaseUrl,
+                    finalResultChatId,
+                    finalResultSessionId,
+                    finalResultAuth,
+                    finalQuestion,
+                    // 最终结果处理器：直接返回整合后的文本
+                    trimmedAnswer -> trimmedAnswer
+            );
+            log.info("试题ID={}，最终整合结果：{}", requestDTO.getId(), finalAnswer);
+
+            // 6. 封装最终结果
+            responseDTO.setAnswer(finalAnswer);
 
         } catch (Exception e) {
-            log.error("数据查询处理失败", e);
-            responseDTO.setAnswer("处理失败：" + e.getMessage());
+            log.error("试题ID={}，数据查询整体处理失败", requestDTO.getId(), e);
+            responseDTO.setAnswer("数据查询处理失败：" + e.getMessage());
         }
 
         return ResponseEntity.ok(responseDTO);
