@@ -1,5 +1,6 @@
 package com.client.mingyuming.controller;
 
+import com.client.mingyuming.client.ClassifyLlmClient;
 import com.client.mingyuming.dto.ChatRequest;
 import com.client.mingyuming.dto.ChatRequest.Message;
 import com.client.mingyuming.dto.ExamRequestDTO;
@@ -33,14 +34,18 @@ public class ExamController {
     private final LLMService llmService;       // 大模型调用服务
     private final ChatService chatService;     // 工具 API 调用服务
     private final MysqlQueryService mysqlQueryService; // MySQL 查询服务
-
+    private final ClassifyLlmClient classifyLlmClient; //大模型分类服务
     @Value("${llm.system.prompt}")
     private String systemPrompt;
     // 注入两个核心服务
-    public ExamController(LLMService llmService, ChatService chatService, MysqlQueryService mysqlQueryService) {
+    public ExamController(LLMService llmService,
+                          ChatService chatService,
+                          MysqlQueryService mysqlQueryService,
+                          ClassifyLlmClient classifyLlmClient) {
         this.llmService = llmService;
         this.chatService = chatService;
         this.mysqlQueryService = mysqlQueryService;
+        this.classifyLlmClient = classifyLlmClient;
     }
 
     /**
@@ -50,21 +55,74 @@ public class ExamController {
     @PostMapping("/exam")
     public ResponseEntity<ExamResponseDTO> handleExamRequest(
             @RequestBody ExamRequestDTO requestDTO) {
-        //打印请求信息
+        // 1. 打印请求信息
         log.info("收到请求：{}", gson.toJson(requestDTO));
-        ResponseEntity<ExamResponseDTO> response;
-        // 区分请求类型：工具调用题 / 数据查询题
-        if (isDataQueryQuestion(requestDTO)) {
-            // 数据查询题处理逻辑
-            response = handleDataQuery(requestDTO);
-        } else {
-            // 原有工具调用题处理逻辑（保持不变）
-            response = handleToolCall(requestDTO);
-        }
-        log.info("返回应答：{}", gson.toJson(response));
-        return response;
-    }
+        String originalQuestion = requestDTO.getQuestion();
+        ExamResponseDTO responseDTO = new ExamResponseDTO();
+        // 初始化响应公共字段（无论哪种类型都需要）
+        responseDTO.setSegments(requestDTO.getSegments());
+        responseDTO.setPaper(requestDTO.getPaper());
+        responseDTO.setId(requestDTO.getId());
 
+        try {
+            // 2. 核心：调用分类大模型，判断请求类型
+            String requestType = classifyLlmClient.getRequestType(originalQuestion);
+
+            // 3. 按分类结果路由到不同处理逻辑
+            switch (requestType) {
+                case "data_query" ->
+                        // 数据查询题：原有 handleDataQuery 逻辑
+                        responseDTO = handleDataQuery(requestDTO).getBody();
+                case "tool_call" ->
+                        // 工具调用题：原有 handleToolCall 逻辑
+                        responseDTO = handleToolCall(requestDTO).getBody();
+                case "knowledge_qa" ->
+                        // 知识问答题：新增逻辑（直接调用大模型返回答案，无需工具/数据库）
+                        responseDTO.setAnswer(handleKnowledgeQa(originalQuestion));
+                default -> {
+                    // 未知类型：降级为知识问答
+                    log.warn("分类大模型返回未知类型：{}，降级为知识问答", requestType);
+                    responseDTO.setAnswer(handleKnowledgeQa(originalQuestion));
+                }
+            }
+
+            // 4. 打印并返回响应
+            log.info("返回应答：{}", gson.toJson(responseDTO));
+            return ResponseEntity.ok(responseDTO);
+
+        } catch (Exception e) {
+            // 全局异常处理：避免接口报错
+            log.error("请求处理异常", e);
+            responseDTO.setAnswer("系统繁忙，请稍后重试：" + e.getMessage());
+            return ResponseEntity.ok(responseDTO);
+        }
+    }
+    /**
+     * 新增：处理知识问答题（直接调用大模型返回答案）
+     */
+    private String handleKnowledgeQa(String question) {
+        // 构建大模型请求（仅需系统提示+用户问题）
+        ChatRequest chatRequest = new ChatRequest();
+        List<Message> messages = new ArrayList<>();
+
+        // 系统提示：明确知识问答无需调用工具
+        Message systemMsg = new Message();
+        systemMsg.setRole("system");
+        systemMsg.setContent("你是知识问答助手，直接回答用户问题，无需调用任何工具，仅返回答案文本，不包含JSON或其他格式。");
+        messages.add(systemMsg);
+
+        // 用户问题
+        Message userMsg = new Message();
+        userMsg.setRole("user");
+        userMsg.setContent(question);
+        messages.add(userMsg);
+
+        chatRequest.setMessages(messages);
+
+        // 调用大模型获取答案（复用原有 LLMService）
+        log.info("处理知识问答：question={}", question);
+        return llmService.generateResponse(chatRequest);
+    }
     /**
      * 处理数据查询题：生成 SQL → 执行查询 → 返回结果
      */
@@ -105,15 +163,6 @@ public class ExamController {
                 "FROM merchant_info " +
                 "WHERE merchant_type = 'ONLINE' " +
                 "LIMIT 5";
-    }
-
-    /**
-     * 判断是否为数据查询题（根据问题内容或分类）TODO
-     */
-    private boolean isDataQueryQuestion(ExamRequestDTO requestDTO) {
-        // 示例：根据问题包含"SQL"、"查询"等关键词判断
-        String question = requestDTO.getQuestion().toLowerCase();
-        return question.contains("sql") ;
     }
 
     /**
