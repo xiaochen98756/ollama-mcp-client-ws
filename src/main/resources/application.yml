@@ -83,15 +83,21 @@ llm:
     chat-id: 6c0d863cacc511f0b7110242ac110005
     session-id: eb300b5014fd4aea99c7d2eb63540e4c
     authorization: Bearer ragflow-E1NmYyNGRhYWNiNjExZjBiNDM4MDI0Mm
-  # 原有配置不变，新增数据查询大模型配置
+  # 数据查询大模型配置
   data-query:
     base-url: http://localhost:9222
-    chat-id: 1b983458acda11f0a30f0242ac110005    # 数据查询模型专属chat-id
-    session-id: 5df86b2211f74c03813eb0af5c96b6a4  # 专属会话ID
+    chat-id: dc9be5aeaccc11f0bc0b0242ac110005    # 数据查询模型专属chat-id
+    session-id: 605945cc78cd4b36aa18e5bf444a2fed  # 专属会话ID
     authorization: Bearer ragflow-E1NmYyNGRhYWNiNjExZjBiNDM4MDI0Mm  # 鉴权Token
-  # 新增最终结果生成模型配置（第三个大模型）
+  # 最终结果生成模型配置
   final-result:
     base-url: http://localhost:9222
-    chat-id: 8e2f085cacc511f0b9310242ac110005  # 结果整合模型专属chat-id
-    session-id: gd522d7014fd4aea99c7d2eb63540e4c  # 专属会话ID
+    chat-id: 1b983458acda11f0a30f0242ac110005    # 结果整合模型专属chat-id
+    session-id: 5df86b2211f74c03813eb0af5c96b6a4  # 专属会话ID
     authorization: Bearer ragflow-E1NmYyNGRhYWNiNjExZjBiNDM4MDI0Mm  # 鉴权Token
+  # 知识问答生成模型配置
+  knowledge-chat:
+    base-url: http://localhost:9222
+    chat-id: 74af9534acd711f08d920242ac110005
+    session-id: 3fefee5ce66d46c190abe1946c088f34
+    authorization: Bearer ragflow-E1NmYyNGRhYWNiNjExZjBiNDM4MDI0Mm

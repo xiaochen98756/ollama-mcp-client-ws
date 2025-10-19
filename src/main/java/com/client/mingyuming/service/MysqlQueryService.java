@@ -56,8 +56,8 @@ public class MysqlQueryService {
             return resultList.toString();
 
         } catch (Exception e) {
-            log.error("SQL 执行失败：{}", sql, e);
-            return "查询异常：" + e.getMessage(); // 实际场景可返回更友好的提示
+            log.error("SQL 执行失败：{}，返回空串", sql, e);
+            return "";
         }
     }
 }

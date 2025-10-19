@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 比赛专用接口控制器（核心入口）
@@ -215,6 +216,7 @@ public class ExamController {
 
             // 2. 路径1：生成SQL → 本地执行
             String finalUserQuestion = userQuestion;
+            AtomicReference<String> excuteSql= new AtomicReference<>("");
             Callable<String> sqlLocalTask = () -> {
                 try {
                     // 2.1 调用SQL生成模型获取SQL
@@ -236,6 +238,7 @@ public class ExamController {
                                 return trimmedAnswer.substring(prefixEnd + SQL_PREFIX.length(), suffixStart).trim();
                             }
                     );
+                    excuteSql.set(sql);
                     log.info("试题ID={}，路径1（生成SQL → 本地执行）生成SQL：{}", requestDTO.getId(), sql);
 
                     // 2.2 本地执行SQL并返回结果
@@ -277,8 +280,8 @@ public class ExamController {
 
             // 5. 调用第三个大模型：整合两个结果生成最终答案
             String finalQuestion = String.format(
-                    "用户问题：%s\n结果1：%s\n结果2：%s",
-                    userQuestion, result1, result2
+                    "用户问题：%s\n结果1：%s,执行sql：%s\n结果2：%s",
+                    userQuestion, result1, excuteSql.get(),result2
             );
             String finalAnswer = llmHttpUtil.call(
                     finalResultBaseUrl,
