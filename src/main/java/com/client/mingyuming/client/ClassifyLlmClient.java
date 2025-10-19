@@ -1,16 +1,16 @@
 package com.client.mingyuming.client;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Map;
 
 /**
  * 分类大模型调用客户端（用于判断请求类型：知识问答/工具调用/数据查询）
@@ -43,6 +43,11 @@ public class ClassifyLlmClient {
      * @param question 原始问题（来自ExamRequestDTO的question字段）
      * @return 分类结果（固定返回：knowledge_qa/tool_call/data_query）
      */
+    /**
+     * 调用分类大模型，返回请求类型
+     * @param question 原始问题（来自ExamRequestDTO的question字段）
+     * @return 分类结果（固定返回：knowledge_qa/tool_call/data_query）
+     */
     public String getRequestType(String question) {
         String requestUrl = baseUrl + "/api/v1/chats/" + chatId + "/completions";
         HttpHeaders headers = new HttpHeaders();
@@ -67,7 +72,7 @@ public class ClassifyLlmClient {
                 ClassifyLlmResponse llmResponse = gson.fromJson(response.getBody(), ClassifyLlmResponse.class);
 
                 // 2. 校验状态码：仅 code=0 视为成功
-                if (!(llmResponse.getCode() ==0)) {
+                if (llmResponse.getCode() != 0) {
                     log.error("分类大模型业务失败：code={}，message={}", llmResponse.getCode(), llmResponse.getMessage());
                     return "knowledge_qa"; // 降级为知识问答
                 }
@@ -79,19 +84,24 @@ public class ClassifyLlmClient {
                     return "knowledge_qa";
                 }
 
-                // 4. 从 data.answer 中提取请求类型（关键步骤，需与大模型约定格式）
+                // 4. 预处理 answer：trim 去前后空格（关键：避免空格导致JSON解析失败）
                 String answer = data.getAnswer();
-                if (answer == null || answer.trim().isEmpty()) {
+                if (answer == null) {
                     log.error("分类大模型返回 answer 为空");
                     return "knowledge_qa";
                 }
+                String trimmedAnswer = answer.trim(); // 去前后空格、换行符
+                if (trimmedAnswer.isEmpty()) {
+                    log.error("分类大模型返回 answer trim 后为空");
+                    return "knowledge_qa";
+                }
 
-                // 【核心】约定格式：大模型需在 answer 中包含“请求类型：xxx”（如“请求类型：tool_call”）
-                String requestType = extractTypeFromAnswer(answer);
-                log.info("分类大模型解析结果：question={}，answer={}，提取requestType={}",
-                        question, answer, requestType);
+                // 5. 从 trimmedAnswer（JSON串）中提取 requestType（核心修改）
+                String requestType = extractTypeFromJsonAnswer(trimmedAnswer);
+                log.info("分类大模型解析结果：question={}，trimmedAnswer={}，提取requestType={}",
+                        question, trimmedAnswer, requestType);
 
-                // 5. 校验提取的类型是否合法
+                // 6. 校验提取的类型是否合法
                 return isLegalType(requestType) ? requestType : "knowledge_qa";
             } else {
                 log.error("分类大模型HTTP响应异常：状态码={}，响应体={}", response.getStatusCode(), response.getBody());
@@ -105,24 +115,37 @@ public class ClassifyLlmClient {
     }
 
     /**
-     * 从 answer 中提取请求类型（需与大模型约定格式）
-     * 示例：answer="请求类型：data_query，该问题需查询数据库" → 提取 "data_query"
+     * 新增：从 JSON 格式的 answer 中提取 requestType（适配大模型返回格式）
+     * 示例：trimmedAnswer={"requestType": "tool_call"} → 提取 "tool_call"
      */
-    private String extractTypeFromAnswer(String answer) {
-        // 正则匹配：从 answer 中找到“请求类型：xxx”的 xxx 部分
-        Pattern pattern = Pattern.compile("请求类型：([a-z_]+)");
-        Matcher matcher = pattern.matcher(answer);
-        if (matcher.find()) {
-            return matcher.group(1).trim(); // 返回提取的类型（如 data_query）
-        }
+    private String extractTypeFromJsonAnswer(String trimmedAnswer) {
+        try {
+            // 将 trimmedAnswer 解析为 JSON 对象，提取 requestType 字段
+            // 用 Gson 解析为 Map（灵活适配，无需额外定义类）
+            Map<String, String> answerJson = gson.fromJson(trimmedAnswer, new TypeToken<Map<String, String>>() {}.getType());
+            if (answerJson == null) {
+                log.error("JSON 解析结果为空：trimmedAnswer={}", trimmedAnswer);
+                return "knowledge_qa";
+            }
 
-        // 若未匹配到约定格式，日志告警并返回默认值
-        log.warn("分类大模型 answer 格式不符合约定，无法提取类型：answer={}", answer);
-        return "knowledge_qa";
+            // 提取 requestType 并去空格（避免大模型返回 " knowledge_qa " 这类带空格的情况）
+            String requestType = answerJson.getOrDefault("requestType", "").trim();
+            if (requestType.isEmpty()) {
+                log.error("JSON 中未找到 requestType 字段或字段值为空：trimmedAnswer={}", trimmedAnswer);
+                return "knowledge_qa";
+            }
+
+            return requestType;
+
+        } catch (JsonSyntaxException e) {
+            // 若 JSON 解析失败（如格式错误），日志告警并降级
+            log.warn("分类大模型 answer 不是合法 JSON：trimmedAnswer={}，错误信息={}", trimmedAnswer, e.getMessage());
+            return "knowledge_qa";
+        }
     }
 
     /**
-     * 校验提取的类型是否合法（仅允许3种）
+     * 校验提取的类型是否合法（仅允许3种，原有逻辑不变）
      */
     private boolean isLegalType(String type) {
         return "knowledge_qa".equals(type) || "tool_call".equals(type) || "data_query".equals(type);

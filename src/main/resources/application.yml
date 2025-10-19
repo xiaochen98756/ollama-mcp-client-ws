@@ -74,8 +74,8 @@ llm:
 #分类大模型配置（用于判断请求类型）
 classify-llm:
   base-url: http://localhost:9222  # 分类大模型基础地址
-  chat-id: 48aaaabaaca911f095810242ac110005  # 固定chatid
-  session-id: 4734ee3cacba11f0a8a30242ac110005  # 固定session_id
+  chat-id: 78ce757aacbb11f0a4e60242ac110005  # 固定chatid
+  session-id: f450f935d10147e4b1d370186a4523d1  # 固定session_id
   authorization: Bearer ragflow-E1NmYyNGRhYWNiNjExZjBiNDM4MDI0Mm  # 认证Token
   connect-timeout: 5000ms  # 连接超时
   read-timeout: 10000ms    # 读取超时
