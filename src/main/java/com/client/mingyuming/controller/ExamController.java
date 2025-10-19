@@ -1,6 +1,5 @@
 package com.client.mingyuming.controller;
 
-import com.client.mingyuming.client.ClassifyLlmClient;
 import com.client.mingyuming.dto.ChatRequest;
 import com.client.mingyuming.dto.ChatRequest.Message;
 import com.client.mingyuming.dto.ExamRequestDTO;
@@ -8,9 +7,12 @@ import com.client.mingyuming.dto.ExamResponseDTO;
 import com.client.mingyuming.service.ChatService;
 import com.client.mingyuming.service.LLMService;
 import com.client.mingyuming.service.MysqlQueryService;
+import com.client.mingyuming.util.LlmHttpUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 比赛专用接口控制器（核心入口）
@@ -28,29 +31,60 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 public class ExamController {
+
+    // ------------------------------
+    // 1. 注入各模型配置参数（从 application.yml 读取）
+    // ------------------------------
+    // 分类模型参数
+    @Value("${llm.classify.base-url}")
+    private String classifyBaseUrl;
+    @Value("${llm.classify.chat-id}")
+    private String classifyChatId;
+    @Value("${llm.classify.session-id}")
+    private String classifySessionId;
+    @Value("${llm.classify.authorization}")
+    private String classifyAuth;
+
+
+    // SQL 生成模型参数
+    @Value("${llm.sql-generate.base-url}")
+    private String sqlBaseUrl;
+    @Value("${llm.sql-generate.chat-id}")
+    private String sqlChatId;
+    @Value("${llm.sql-generate.session-id}")
+    private String sqlSessionId;
+    @Value("${llm.sql-generate.authorization}")
+    private String sqlAuth;
+
+
+    // ------------------------------
+    // 2. 注入服务和工具
+    // ------------------------------
     private final Gson gson = new GsonBuilder()
-            .setPrettyPrinting()  // 关键：启用格式化输出
+            .setPrettyPrinting()
             .create();
-    private final LLMService llmService;       // 大模型调用服务
+    private final LLMService llmService;       // 原有大模型服务（知识问答用）
     private final ChatService chatService;     // 工具 API 调用服务
     private final MysqlQueryService mysqlQueryService; // MySQL 查询服务
-    private final ClassifyLlmClient classifyLlmClient; //大模型分类服务
+
+    @Autowired
+    LlmHttpUtil llmHttpUtil;
+
     @Value("${llm.system.prompt}")
     private String systemPrompt;
-    // 注入两个核心服务
+
+    // 构造方法注入（移除 ClassifyLlmClient，改用通用工具类）
     public ExamController(LLMService llmService,
                           ChatService chatService,
-                          MysqlQueryService mysqlQueryService,
-                          ClassifyLlmClient classifyLlmClient) {
+                          MysqlQueryService mysqlQueryService) {
         this.llmService = llmService;
         this.chatService = chatService;
         this.mysqlQueryService = mysqlQueryService;
-        this.classifyLlmClient = classifyLlmClient;
     }
 
     /**
      * 比赛核心接口：/api/exam
-     * 流程：接收请求 → 调用大模型生成工具指令 → 调用工具 API → 返回结果
+     * 流程：接收请求 → 通用工具类调用分类模型 → 按类型路由 → 返回结果
      */
     @PostMapping("/exam")
     public ResponseEntity<ExamResponseDTO> handleExamRequest(
@@ -59,56 +93,68 @@ public class ExamController {
         log.info("收到请求：{}", gson.toJson(requestDTO));
         String originalQuestion = requestDTO.getQuestion();
         ExamResponseDTO responseDTO = new ExamResponseDTO();
-        // 初始化响应公共字段（无论哪种类型都需要）
+        // 初始化响应公共字段
         responseDTO.setSegments(requestDTO.getSegments());
         responseDTO.setPaper(requestDTO.getPaper());
         responseDTO.setId(requestDTO.getId());
 
         try {
-            // 2. 核心：调用分类大模型，判断请求类型
-            String requestType = classifyLlmClient.getRequestType(originalQuestion);
+            // 2. 核心：通用工具类调用分类模型（差异化处理器：解析 JSON 中的 requestType）
+            String requestType = llmHttpUtil.call(
+                    classifyBaseUrl,
+                    classifyChatId,
+                    classifySessionId,
+                    classifyAuth,
+                    originalQuestion,
+                    // 分类模型 answer 处理器：解析 JSON 提取 requestType
+                    trimmedAnswer -> {
+                        Map<String, String> answerJson = gson.fromJson(
+                                trimmedAnswer, new TypeToken<Map<String, String>>() {}.getType()
+                        );
+                        String type = answerJson.getOrDefault("requestType", "").trim();
+                        // 非法类型降级为知识问答
+                        return ("knowledge_qa".equals(type) || "tool_call".equals(type) || "data_query".equals(type))
+                                ? type : "knowledge_qa";
+                    }
+            );
 
-            // 3. 按分类结果路由到不同处理逻辑
+            // 3. 按分类结果路由
             switch (requestType) {
                 case "data_query" ->
-                        // 数据查询题：原有 handleDataQuery 逻辑
                         responseDTO = handleDataQuery(requestDTO).getBody();
                 case "tool_call" ->
-                        // 工具调用题：原有 handleToolCall 逻辑
                         responseDTO = handleToolCall(requestDTO).getBody();
                 case "knowledge_qa" ->
-                        // 知识问答题：新增逻辑（直接调用大模型返回答案，无需工具/数据库）
                         responseDTO.setAnswer(handleKnowledgeQa(originalQuestion));
                 default -> {
-                    // 未知类型：降级为知识问答
-                    log.warn("分类大模型返回未知类型：{}，降级为知识问答", requestType);
+                    log.warn("未知请求类型：{}，降级为知识问答", requestType);
                     responseDTO.setAnswer(handleKnowledgeQa(originalQuestion));
                 }
             }
 
-            // 4. 打印并返回响应
+            // 4. 返回响应
             log.info("返回应答：{}", gson.toJson(responseDTO));
             return ResponseEntity.ok(responseDTO);
 
         } catch (Exception e) {
-            // 全局异常处理：避免接口报错
+            // 全局异常处理
             log.error("请求处理异常", e);
             responseDTO.setAnswer("系统繁忙，请稍后重试：" + e.getMessage());
             return ResponseEntity.ok(responseDTO);
         }
     }
+
     /**
-     * 新增：处理知识问答题（直接调用大模型返回答案）
+     * 处理知识问答：复用原有 LLMService
      */
     private String handleKnowledgeQa(String question) {
-        // 构建大模型请求（仅需系统提示+用户问题）
         ChatRequest chatRequest = new ChatRequest();
         List<Message> messages = new ArrayList<>();
 
-        // 系统提示：明确知识问答无需调用工具
+        // 系统提示
         Message systemMsg = new Message();
         systemMsg.setRole("system");
-        systemMsg.setContent("你是知识问答助手，直接回答用户问题，无需调用任何工具，仅返回答案文本，不包含JSON或其他格式。");
+        systemMsg.setContent("你是知识问答助手，直接回答用户问题，无需调用工具，仅返回纯文本答案。");
         messages.add(systemMsg);
 
         // 用户问题
@@ -118,13 +164,12 @@ public class ExamController {
         messages.add(userMsg);
 
         chatRequest.setMessages(messages);
-
-        // 调用大模型获取答案（复用原有 LLMService）
         log.info("处理知识问答：question={}", question);
         return llmService.generateResponse(chatRequest);
     }
+
     /**
-     * 处理数据查询题：生成 SQL → 执行查询 → 返回结果
+     * 处理数据查询：通用工具类调用 SQL 生成模型
      */
     private ResponseEntity<ExamResponseDTO> handleDataQuery(ExamRequestDTO requestDTO) {
         ExamResponseDTO responseDTO = new ExamResponseDTO();
@@ -133,15 +178,38 @@ public class ExamController {
         responseDTO.setId(requestDTO.getId());
 
         try {
-            // 步骤1：调用大模型生成 SQL（预留逻辑，暂时用示例 SQL 代替）
-            String sql = generateSqlByLlm(requestDTO);
-            log.info("试题ID={}，调用大模型生成的 SQL：{}", requestDTO.getId(), sql);
+            // 1. 拼接用户问题（含补充信息）
+            String userQuestion = requestDTO.getQuestion();
+            if (requestDTO.getContent() != null && !requestDTO.getContent().trim().isEmpty()) {
+                userQuestion += "\n补充信息：" + requestDTO.getContent().trim();
+            }
 
-            // 步骤2：执行 SQL 并获取结果
+            // 2. 通用工具类调用 SQL 生成模 型（差异化处理器：去除 ```sql 前缀后缀）
+            String sql = llmHttpUtil.call(
+                    sqlBaseUrl,
+                    sqlChatId,
+                    sqlSessionId,
+                    sqlAuth,
+                    userQuestion,
+                    // SQL 模型 answer 处理器：提取纯 SQL
+                    trimmedAnswer -> {
+                        final String SQL_PREFIX = "```sql";
+                        final String SQL_SUFFIX = "```";
+                        // 查找前缀和后缀位置
+                        int prefixEnd = trimmedAnswer.indexOf(SQL_PREFIX);
+                        int suffixStart = trimmedAnswer.indexOf(SQL_SUFFIX, prefixEnd + SQL_PREFIX.length());
+                        if (prefixEnd == -1 || suffixStart == -1) {
+                            throw new RuntimeException("SQL 格式错误，缺少 ```sql 前缀或 ``` 后缀");
+                        }
+                        // 提取纯 SQL 并去空格
+                        return trimmedAnswer.substring(prefixEnd + SQL_PREFIX.length(), suffixStart).trim();
+                    }
+            );
+            log.info("试题ID={}，生成 SQL：{}", requestDTO.getId(), sql);
+
+            // 3. 执行 SQL 并返回结果
             String queryResult = mysqlQueryService.executeQuery(sql);
-            log.info("试题ID={}，查询数据库得到的结果：{}", requestDTO.getId(), queryResult);
-
-            // 步骤3：封装结果
+            log.info("试题ID={}，查询结果：{}", requestDTO.getId(), queryResult);
             responseDTO.setAnswer(queryResult);
 
         } catch (Exception e) {
@@ -153,34 +221,19 @@ public class ExamController {
     }
 
     /**
-     * 调用大模型生成 SQL（预留方法，后续对接 LLM）
-     * 目前返回示例 SQL（匹配用户提供的示例问题）
-     */
-    private String generateSqlByLlm(ExamRequestDTO requestDTO) {
-        // 示例：用户问题是查询商户类型为'ONLINE'的前5个商户信息
-        // 实际场景中，这里应该调用 llmService 生成 SQL
-        return "SELECT merchant_id, merchant_name, business_license " +
-                "FROM merchant_info " +
-                "WHERE merchant_type = 'ONLINE' " +
-                "LIMIT 5";
-    }
-
-    /**
-     * 原有工具调用题处理逻辑（保持不变）
+     * 原有工具调用逻辑（保持不变）
      */
     private ResponseEntity<ExamResponseDTO> handleToolCall(ExamRequestDTO requestDTO) {
-        // 2. 构建大模型请求（系统提示 + 用户问题）
         ChatRequest chatRequest = new ChatRequest();
         List<Message> messages = new ArrayList<>();
 
-        // 2.1 系统提示（工具调用规则）
+        // 系统提示（工具调用规则）
         Message systemMsg = new Message();
         systemMsg.setRole("system");
-        // 原系统提示词基础上，增加更严格的格式约束
         systemMsg.setContent(systemPrompt);
         messages.add(systemMsg);
 
-        // 2.2 用户问题（合并 question 和 content）
+        // 用户问题（合并 question 和 content）
         Message userMsg = new Message();
         String userQuestion = requestDTO.getQuestion() +
                 (requestDTO.getContent() != null ? "\n补充信息：" + requestDTO.getContent() : "");
@@ -190,15 +243,15 @@ public class ExamController {
 
         chatRequest.setMessages(messages);
 
-        // 3. 调用大模型生成工具指令
+        // 调用大模型生成工具指令
         String toolCmd = llmService.generateResponse(chatRequest);
-        log.info("试题ID={}，大模型生成工具指令：{}", requestDTO.getId(), toolCmd);
+        log.info("试题ID={}，工具指令：{}", requestDTO.getId(), toolCmd);
 
-        // 4. 调用工具 API 执行指令
+        // 调用工具 API
         String toolResult = chatService.callToolApi(toolCmd);
-        log.info("试题ID={}，工具调用结果：{}", requestDTO.getId(), toolResult);
+        log.info("试题ID={}，工具结果：{}", requestDTO.getId(), toolResult);
 
-        // 5. 封装响应并返回
+        // 封装响应
         ExamResponseDTO responseDTO = new ExamResponseDTO();
         responseDTO.setSegments(requestDTO.getSegments());
         responseDTO.setPaper(requestDTO.getPaper());
