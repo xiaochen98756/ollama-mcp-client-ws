@@ -183,25 +183,48 @@ public class ExamController {
     }
 
     /**
-     * 处理知识问答：调用专用知识问答大模型（替换原有LLMService）
+     * 处理知识问答：直接返回结果，无结果时返回固定字符串
      */
     private String handleKnowledgeQa(String question) {
         try {
-            // 调用通用工具类，使用知识问答大模型
-            return llmHttpUtil.call(
+            // 第一次调用知识问答大模型
+            String firstAnswer = llmHttpUtil.call(
                     "知识问答大模型",
                     knowledgeBaseUrl,
                     knowledgeChatId,
                     knowledgeSessionId,
                     knowledgeAuth,
                     question,
-                    // 知识问答结果处理器：直接返回纯文本（无需格式处理）
                     trimmedAnswer -> trimmedAnswer
             );
+
+            // 检查第一次结果是否为空、无意义或包含无结果相关表述
+            if (firstAnswer == null || firstAnswer.trim().isEmpty() || firstAnswer.contains("我没找到答案")
+                    || firstAnswer.contains("没找到答案") || firstAnswer.contains("无结果") || firstAnswer.contains("无法回答")) {
+                // 进行第二次调用（兜底查询）
+                String secondAnswer = llmHttpUtil.call(
+                        "知识问答大模型（第二次）",
+                        knowledgeBaseUrl,
+                        knowledgeChatId,
+                        knowledgeSessionId,
+                        knowledgeAuth,
+                        question,
+                        trimmedAnswer -> trimmedAnswer
+                );
+
+                // 检查第二次结果
+                if (secondAnswer == null || secondAnswer.trim().isEmpty() || secondAnswer.contains("我没找到答案")
+                        || secondAnswer.contains("没找到答案") || secondAnswer.contains("无结果") || secondAnswer.contains("无法回答")) {
+                    return "我没找到答案";
+                } else {
+                    return secondAnswer;
+                }
+            } else {
+                return firstAnswer;
+            }
         } catch (Exception e) {
             log.error("知识问答大模型调用失败：question={}", question, e);
-            // 降级处理：返回友好提示
-            return "";
+            return "我没找到答案";
         }
     }
 
@@ -303,24 +326,26 @@ public class ExamController {
                     // 最终结果处理器：直接返回整合后的文本
                     trimmedAnswer -> trimmedAnswer
             );
-
-            if("00".equals(finalAnswer.trim())){
+            // 处理无结果场景
+            if (result1.contains("路径1执行失败") && result2.contains("路径2执行失败")) {
+                responseDTO.setAnswer("无结果");
+            } else if ("00".equals(finalAnswer.trim())) {
                 responseDTO.setAnswer(result2);
                 log.info("试题ID={}，最终整合结果：{}", requestDTO.getId(), result2);
-            }else {
+            } else {
                 responseDTO.setAnswer(finalAnswer);
                 log.info("试题ID={}，最终整合结果：{}", requestDTO.getId(), finalAnswer);
             }
         } catch (Exception e) {
             log.error("试题ID={}，数据查询整体处理失败", requestDTO.getId(), e);
-            responseDTO.setAnswer("数据查询处理失败：" + e.getMessage());
+            responseDTO.setAnswer("无结果");
         }
 
         return ResponseEntity.ok(responseDTO);
     }
 
     /**
-     * 原有工具调用逻辑（保持不变）
+     * 工具调用逻辑
      */
     private ResponseEntity<ExamResponseDTO> handleToolCall(ExamRequestDTO requestDTO) {
         ChatRequest chatRequest = new ChatRequest();

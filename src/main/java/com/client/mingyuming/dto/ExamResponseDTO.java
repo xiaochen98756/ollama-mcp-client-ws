@@ -13,6 +13,6 @@ public class ExamResponseDTO {
     private String paper;
     // 与请求一致的试题编号
     private Integer id;
-    // 工具调用结果/答案（需符合比赛格式要求）
+    // 工具调用结果/答案
     private String answer;
 }
