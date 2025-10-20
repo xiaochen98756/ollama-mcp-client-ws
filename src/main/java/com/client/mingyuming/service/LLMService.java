@@ -31,6 +31,18 @@ public class LLMService {
     @Value("${spring.ai.openai.chat.options.model}")
     private String modelId;
 
+    @Value("${spring.ai.openai.chat.options.max-tokens}")
+    private Integer maxTokens;
+
+    @Value("${spring.ai.openai.chat.options.temperature}")
+    private Double temperature;
+
+    @Value("${spring.ai.openai.chat.options.stream}")
+    private Boolean stream;
+
+    @Value("${spring.ai.openai.chat.options.enable-thinking}")
+    private Boolean enableThinking;
+
     private final RestTemplate restTemplate;
 
     // 仅依赖 RestTemplate，构造方法注入
@@ -60,9 +72,12 @@ public class LLMService {
                     .collect(Collectors.toList());
             llmRequest.put("messages", llmMessages);
 
+            llmRequest.put("max_tokens", maxTokens);       // 最大 tokens
+            llmRequest.put("temperature", temperature);   // 随机性温度
+            llmRequest.put("stream", stream);             // 流式返回开关
             // 添加 chat_template_kwargs 配置（思考模式关）
             Map<String, Object> chatTemplateKwargs = new HashMap<>();
-            chatTemplateKwargs.put("enable_thinking", false); // 禁用思考过程
+            chatTemplateKwargs.put("enable_thinking", enableThinking);
             llmRequest.put("chat_template_kwargs", chatTemplateKwargs);
 
             // 3. 构建请求头（包含鉴权信息）

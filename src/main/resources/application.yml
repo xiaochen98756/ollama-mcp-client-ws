@@ -39,6 +39,10 @@ spring:
       chat:
         options:
           model: ./generate/Qwen3-0.6B-Q8_0.gguf
+          max-tokens: 512        # 对应请求中的 max_tokens
+          temperature: 0.5       # 对应请求中的 temperature
+          stream: false          # 对应请求中的 stream
+          enable-thinking: false # 思考模式
 #工具调用配置
 team:
   api:
