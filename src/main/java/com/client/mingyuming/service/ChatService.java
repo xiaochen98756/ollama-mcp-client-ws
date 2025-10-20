@@ -11,7 +11,7 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -150,19 +150,37 @@ public class ChatService {
         }
     }
 
-    // 调用 GET 类型工具 API
+    // 调用 GET 类型工具 API（修复 headers 未传递问题）
     private String callGetApi(String apiUrl, Map<String, Object> params, String appId, String appKey) {
+        // 1. 构建请求头（包含鉴权信息）
         HttpHeaders headers = new HttpHeaders();
         headers.set("X-App-Id", appId);
         headers.set("X-App-Key", appKey);
+        // 重要：指定 Content-Type（部分服务可能校验）
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
+        // 2. 构建请求参数
         MultiValueMap<String, String> urlParams = new LinkedMultiValueMap<>();
         params.forEach((key, value) -> urlParams.add(key, value.toString()));
 
+        // 3. 拼接完整 URL（含参数）
         String fullUrl = buildGetUrl(apiUrl, urlParams);
-        log.info("调用工具 API：{}", fullUrl);
+        log.info("调用工具 API：{}，headers：{}", fullUrl, headers);
 
-        Map<String, Object> response = restTemplate.getForObject(fullUrl, Map.class);
+        // 4. 使用 exchange 方法发送带 headers 的 GET 请求
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+        ResponseEntity<Map> responseEntity = restTemplate.exchange(
+                fullUrl,
+                HttpMethod.GET,
+                requestEntity,
+                Map.class
+        );
+
+        // 5. 处理响应
+        if (!responseEntity.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("工具 API 调用失败，状态码：" + responseEntity.getStatusCode());
+        }
+        Map<String, Object> response = responseEntity.getBody();
         return formatResponse(response);
     }
 
