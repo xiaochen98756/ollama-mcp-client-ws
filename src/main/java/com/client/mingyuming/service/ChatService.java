@@ -46,11 +46,11 @@ public class ChatService {
 
     // 工具 API 映射
     private static final Map<String, String> TOOL_API_MAP = Map.of(
-            "credit-card-tool", "/mock/credit-card/monthly-bill",
-            "exchange-rate-tool", "/mock/exchange-rate",
-            "utility-bill-tool", "/mock/utility-bill/monthly-bill",
-            "user-asset-tool", "/mock/user/assets",
-            "payment-order-tool", "/mock/qr/create-payment-order"
+            "credit-card-tool", "/api/credit-card/monthly-bill",
+            "exchange-rate-tool", "/api/exchange-rate",
+            "utility-bill-tool", "/api/utility-bill/monthly-bill",
+            "user-asset-tool", "/api/user/assets",
+            "payment-order-tool", "/api/qr/create-payment-order"
     );
     // 本地工具 API 映射
     private static final Map<String, String> TOOL_CURRENT_MAP = Map.of(
@@ -196,10 +196,18 @@ public class ChatService {
                     response.get("converted_amount"), response.get("to_currency"),
                     response.get("rate"), response.get("timestamp"));
         } else if (response.containsKey("utility_type")) {
+            // 根据 utility_type 确定用量单位（匹配工具文档和测试结果）
+            String usageUnit = switch ((String) response.get("utility_type")) {
+                case "electricity" -> "kWh（度）";
+                case "water" -> "m³（立方米）";
+                case "gas" -> "m³（立方米）";
+                default -> "";
+            };
             return String.format("水电煤账单（%s-%s）：户号=%s，用量=%.2f%s，金额=%.2f%s，状态=%s",
                     response.get("bill_month"), response.get("utility_type"),
                     response.get("household_id"), response.get("usage_amount"),
-                    response.get("usage_unit"), response.get("bill_amount"),
+                    usageUnit, // 使用动态匹配的单位，不再依赖不存在的字段
+                    response.get("bill_amount"),
                     response.get("currency"), response.get("payment_status"));
         } else if (response.containsKey("cards") || response.containsKey("households")) {
             String assetType = response.containsKey("cards") ? "信用卡" : "房产";
