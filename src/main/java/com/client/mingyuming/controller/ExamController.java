@@ -92,6 +92,9 @@ public class ExamController {
     @Value("${llm.knowledge-chat.authorization}")
     private String knowledgeAuth;
 
+    // 注入工具结果处理提示词
+    @Value("${llm.tool-result-prompt}")
+    private String toolResultPrompt;
     // ------------------------------
     // 2. 注入服务和工具
     // ------------------------------
@@ -351,6 +354,7 @@ public class ExamController {
         ChatRequest chatRequest = new ChatRequest();
         List<Message> messages = new ArrayList<>();
 
+        // 1. 原有逻辑：调用工具生成指令并执行
         // 系统提示（工具调用规则）
         Message systemMsg = new Message();
         systemMsg.setRole("system");
@@ -367,20 +371,49 @@ public class ExamController {
 
         chatRequest.setMessages(messages);
 
-        // 调用大模型生成工具指令
+        // 调用大模型获取调用哪个工具
         String toolCmd = llmService.generateResponse(chatRequest);
         log.info("试题ID={}，工具指令：{}", requestDTO.getId(), toolCmd);
 
-        // 调用工具 API
+        // 调用工具 API 获取原始结果
         String toolResult = chatService.callToolApi(toolCmd);
-        log.info("试题ID={}，工具结果：{}", requestDTO.getId(), toolResult);
+        log.info("试题ID={}，工具原始结果：{}", requestDTO.getId(), toolResult);
 
-        // 封装响应
+
+        // 2. 新增：调用大模型处理工具结果（按题目类型格式化）
+        // 2.1 获取题目类型（从requestDTO获取，如"选择题"或"问答题"）
+        String questionType = requestDTO.getCategory();  // 假设DTO中已有category字段存储题目类型
+        log.info("试题ID={}，题目类型：{}", requestDTO.getId(), questionType);
+
+        // 2.2 构建结果处理的提示词（替换占位符）
+        String formattedPrompt = String.format(toolResultPrompt, questionType, toolResult);
+
+        // 2.3 构建新的ChatRequest，用于结果处理
+        ChatRequest resultProcessRequest = new ChatRequest();
+        List<Message> resultMessages = new ArrayList<>();
+        // 系统提示：指定结果处理规则
+        Message resultSystemMsg = new Message();
+        resultSystemMsg.setRole("system");
+        resultSystemMsg.setContent(formattedPrompt);
+        resultMessages.add(resultSystemMsg);
+        // 用户消息：触发处理（可空，或重复问题便于模型理解）
+        Message resultUserMsg = new Message();
+        resultUserMsg.setRole("user");
+        resultUserMsg.setContent("请根据上述规则处理结果并返回最终答案");
+        resultMessages.add(resultUserMsg);
+        resultProcessRequest.setMessages(resultMessages);
+
+        // 2.4 调用大模型生成最终答案（复用现有方法）
+        String finalAnswer = llmService.generateResponse(resultProcessRequest);
+        log.info("试题ID={}，格式化后最终答案：{}", requestDTO.getId(), finalAnswer);
+
+
+        // 3. 封装响应
         ExamResponseDTO responseDTO = new ExamResponseDTO();
         responseDTO.setSegments(requestDTO.getSegments());
         responseDTO.setPaper(requestDTO.getPaper());
         responseDTO.setId(requestDTO.getId());
-        responseDTO.setAnswer(toolResult);
+        responseDTO.setAnswer(finalAnswer);
 
         return ResponseEntity.ok(responseDTO);
     }
