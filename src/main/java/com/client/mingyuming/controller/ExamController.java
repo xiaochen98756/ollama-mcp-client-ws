@@ -138,6 +138,7 @@ public class ExamController {
         try {
             // 2. 核心：通用工具类调用分类模型（差异化处理器：解析 JSON 中的 requestType）
             String requestType = llmHttpUtil.call(
+                    "意图识别大模型",
                     classifyBaseUrl,
                     classifyChatId,
                     classifySessionId,
@@ -164,7 +165,7 @@ public class ExamController {
                 case "knowledge_qa" ->
                         responseDTO.setAnswer(handleKnowledgeQa(originalQuestion));
                 default -> {
-                    log.warn("未知请求类型：{}，降级为知识问答", requestType);
+                    log.info("未知请求类型：{}，降级为知识问答", requestType);
                     responseDTO.setAnswer(handleKnowledgeQa(originalQuestion));
                 }
             }
@@ -188,6 +189,7 @@ public class ExamController {
         try {
             // 调用通用工具类，使用知识问答大模型
             return llmHttpUtil.call(
+                    "知识问答大模型",
                     knowledgeBaseUrl,
                     knowledgeChatId,
                     knowledgeSessionId,
@@ -227,6 +229,7 @@ public class ExamController {
                 try {
                     // 2.1 调用SQL生成模型获取SQL
                     String sql = llmHttpUtil.call(
+                            "SQL生成大模型",
                             sqlBaseUrl,
                             sqlChatId,
                             sqlSessionId,
@@ -260,6 +263,7 @@ public class ExamController {
             Callable<String> dataQueryModelTask = () -> {
                 try {
                     return llmHttpUtil.call(
+                            "数据查询大模型",
                             dataQueryBaseUrl,
                             dataQueryChatId,
                             dataQuerySessionId,
@@ -290,6 +294,7 @@ public class ExamController {
                     userQuestion, result1, excuteSql.get(),result2
             );
             String finalAnswer = llmHttpUtil.call(
+                    "数据比对拼接大模型",
                     finalResultBaseUrl,
                     finalResultChatId,
                     finalResultSessionId,

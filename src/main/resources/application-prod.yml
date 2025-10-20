@@ -10,7 +10,7 @@ spring:
         options:
           model: ./generate/Qwen3-0.6B-Q8_0.gguf
 
-# 3. 日志配置（精简输出，避免比赛服务器磁盘占用）
+#日志配置
 logging:
   level:
     root: INFO
@@ -19,11 +19,11 @@ logging:
     org.springframework.web: WARN  # Web 模块仅打印警告及以上日志
     org.springframework.web.client.RestTemplate: DEBUG
   file:
-    name: /var/log/ollama-mcp-client.log  # 日志输出路径（比赛服务器可写目录）
+    name: /var/log/ollama-mcp-client.log  # 日志输出路径
     max-size: 100MB  # 单文件最大 100MB
     max-history: 5  # 保留 5 个历史日志文件
 
-# 4. 自定义配置：组委会 API 鉴权信息（供 ChatService 读取，比赛时替换为真实值）
+# 组委会提供的API工具鉴权信息
 team:
   api:
     base-url: http://localhost:10000  # 工具 API 地址

@@ -71,7 +71,7 @@ llm:
       5. 错误处理：
          - 若工具必填参数缺失（如calculator-tool无expression），直接输出{"toolName":"对应工具名","error":"缺失必填参数：XXX"}
          - 若问题涉及不支持的工具，输出{"toolName":"none","error":"不支持该工具调用"}
-  # 大模型参数配置（按模型分组）
+  # 意图识别大模型参数配置
   classify:
     base-url: http://localhost:9222
     chat-id: 78ce757aacbb11f0a4e60242ac110005
@@ -86,14 +86,14 @@ llm:
   # 数据查询大模型配置
   data-query:
     base-url: http://localhost:9222
-    chat-id: dc9be5aeaccc11f0bc0b0242ac110005    # 数据查询模型专属chat-id
-    session-id: 605945cc78cd4b36aa18e5bf444a2fed  # 专属会话ID
+    chat-id: dc9be5aeaccc11f0bc0b0242ac110005
+    session-id: 605945cc78cd4b36aa18e5bf444a2fed
     authorization: Bearer ragflow-E1NmYyNGRhYWNiNjExZjBiNDM4MDI0Mm  # 鉴权Token
-  # 最终结果生成模型配置
+  # 最终结果拼接模型配置
   final-result:
     base-url: http://localhost:9222
-    chat-id: 1b983458acda11f0a30f0242ac110005    # 结果整合模型专属chat-id
-    session-id: 5df86b2211f74c03813eb0af5c96b6a4  # 专属会话ID
+    chat-id: 1b983458acda11f0a30f0242ac110005
+    session-id: 5df86b2211f74c03813eb0af5c96b6a4
     authorization: Bearer ragflow-E1NmYyNGRhYWNiNjExZjBiNDM4MDI0Mm  # 鉴权Token
   # 知识问答生成模型配置
   knowledge-chat:
