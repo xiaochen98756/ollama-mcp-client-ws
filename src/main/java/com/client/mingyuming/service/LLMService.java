@@ -60,6 +60,11 @@ public class LLMService {
                     .collect(Collectors.toList());
             llmRequest.put("messages", llmMessages);
 
+            // 添加 chat_template_kwargs 配置（思考模式关）
+            Map<String, Object> chatTemplateKwargs = new HashMap<>();
+            chatTemplateKwargs.put("enable_thinking", false); // 禁用思考过程
+            llmRequest.put("chat_template_kwargs", chatTemplateKwargs);
+
             // 3. 构建请求头（包含鉴权信息）
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
