@@ -6,7 +6,6 @@ import com.client.mingyuming.dto.ExamRequestDTO;
 import com.client.mingyuming.dto.ExamResponseDTO;
 import com.client.mingyuming.service.ChatService;
 import com.client.mingyuming.service.LLMService;
-import com.client.mingyuming.service.MysqlQueryService;
 import com.client.mingyuming.util.LlmHttpUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -23,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 
 /**
  * 比赛专用接口控制器（核心入口）
@@ -55,21 +53,15 @@ public class ExamController {
     private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
     private final LLMService llmService;
     private final ChatService chatService;
-    private final MysqlQueryService mysqlQueryService;
-    private final ExecutorService executorService;
     private final LlmHttpUtil llmHttpUtil;
 
     // 构造方法注入
     @Autowired
     public ExamController(LLMService llmService,
                           ChatService chatService,
-                          MysqlQueryService mysqlQueryService,
-                          ExecutorService executorService, // 注入全局线程池
                           LlmHttpUtil llmHttpUtil) {
         this.llmService = llmService;
         this.chatService = chatService;
-        this.mysqlQueryService = mysqlQueryService;
-        this.executorService = executorService;
         this.llmHttpUtil = llmHttpUtil;
     }
 
@@ -114,7 +106,6 @@ public class ExamController {
                 switch (requestType) {
                     case "data_query" -> responseDTO = handleDataQuery(requestDTO).getBody();
                     case "tool_call" -> responseDTO = handleToolCall(requestDTO).getBody();
-                    case "knowledge_qa" -> responseDTO.setAnswer(handleKnowledgeQa(originalQuestion));
                     default -> responseDTO.setAnswer(handleKnowledgeQa(originalQuestion));
                 }
             }

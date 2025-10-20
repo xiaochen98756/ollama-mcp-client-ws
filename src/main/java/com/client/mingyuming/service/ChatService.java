@@ -180,7 +180,7 @@ public class ChatService {
             Map<String, Object> decision = parseToolParams(toolDecisionJson);
             String toolName = (String) decision.get("toolName");
 
-            if ("none".equals(toolName)) {
+            if ("none".equals(toolName)) {//TODO
                 return (String) decision.getOrDefault("message", "非工具调用类问题");
             }
 
