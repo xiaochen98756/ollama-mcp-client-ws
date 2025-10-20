@@ -14,5 +14,17 @@ public class ChatRequest {
     public static class Message {
         private String role;   // 角色：user（用户）、assistant（助手）、system（系统）
         private String content; // 消息内容（如用户的问题、助手的回答）
+
+        public Message() {
+
+        }
+
+        public Message(String role, String content) {
+            this.role = role;
+            this.content = content;
+        }
+    }
+
+    public ChatRequest() {
     }
 }
