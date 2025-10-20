@@ -123,68 +123,65 @@ public class ExamController {
     }
 
     /**
-     * 比赛核心接口：/api/exam
-     * 流程：接收请求 → 通用工具类调用分类模型 → 按类型路由 → 返回结果
+     * 比赛核心接口：/api/exam（增强版，支持HARD难度的动态工具选择）
      */
     @PostMapping("/exam")
     public ResponseEntity<ExamResponseDTO> handleExamRequest(
             @RequestBody ExamRequestDTO requestDTO) {
-        // 1. 打印请求信息
+        // 1. 基础初始化
         log.info("收到请求：{}", gson.toJson(requestDTO));
         String originalQuestion = requestDTO.getQuestion();
         ExamResponseDTO responseDTO = new ExamResponseDTO();
-        // 初始化响应公共字段
         responseDTO.setSegments(requestDTO.getSegments());
         responseDTO.setPaper(requestDTO.getPaper());
         responseDTO.setId(requestDTO.getId());
 
         try {
-            // 2. 核心：通用工具类调用分类模型（差异化处理器：解析 JSON 中的 requestType）
-            String requestType = llmHttpUtil.call(
-                    "意图识别大模型",
-                    classifyBaseUrl,
-                    classifyChatId,
-                    classifySessionId,
-                    classifyAuth,
-                    originalQuestion,
-                    // 分类模型 answer 处理器：解析 JSON 提取 requestType
-                    trimmedAnswer -> {
-                        Map<String, String> answerJson = gson.fromJson(
-                                trimmedAnswer, new TypeToken<Map<String, String>>() {}.getType()
-                        );
-                        String type = answerJson.getOrDefault("requestType", "").trim();
-                        // 非法类型降级为知识问答
-                        return ("knowledge_qa".equals(type) || "tool_call".equals(type) || "data_query".equals(type))
-                                ? type : "knowledge_qa";
-                    }
-            );
-
-            // 3. 按分类结果路由
-            switch (requestType) {
-                case "data_query" ->
-                        responseDTO = handleDataQuery(requestDTO).getBody();
-                case "tool_call" ->
-                        responseDTO = handleToolCall(requestDTO).getBody();
-                case "knowledge_qa" ->
-                        responseDTO.setAnswer(handleKnowledgeQa(originalQuestion));
-                default -> {
-                    log.info("未知请求类型：{}，降级为知识问答", requestType);
-                    responseDTO.setAnswer(handleKnowledgeQa(originalQuestion));
+            // 2. 判断试卷难度是否为HARD（TEST_HARD或EXAM_HARD）
+            String paperType = requestDTO.getPaper();
+            if ("TEST_HARD".equals(paperType) || "EXAM_HARD".equals(paperType)) {
+                // 2.1 构建工具选择的提示词（告知大模型可用工具）
+                String toolSelectionPrompt = buildToolSelectionPrompt(originalQuestion, requestDTO.getContent());
+                // 2.2 调用大模型决策工具类型
+                String toolDecisionJson = llmService.generateToolDecision(toolSelectionPrompt);
+                log.info("HARD难度，大模型决策结果：{}", toolDecisionJson);
+                // 2.3 解析决策结果并调用对应工具
+                String toolResult = chatService.executeToolByDecision(toolDecisionJson, originalQuestion, requestDTO.getContent());
+                responseDTO.setAnswer(toolResult);
+            } else {
+                // 非HARD难度：沿用原有分类路由逻辑
+                String requestType = llmHttpUtil.call(
+                        "意图识别大模型",
+                        classifyBaseUrl,
+                        classifyChatId,
+                        classifySessionId,
+                        classifyAuth,
+                        originalQuestion,
+                        trimmedAnswer -> {
+                            Map<String, String> answerJson = gson.fromJson(trimmedAnswer, new TypeToken<Map<String, String>>() {}.getType());
+                            String type = answerJson.getOrDefault("requestType", "").trim();
+                            return ("knowledge_qa".equals(type) || "tool_call".equals(type) || "data_query".equals(type))
+                                    ? type : "knowledge_qa";
+                        }
+                );
+                // 按原有逻辑路由
+                switch (requestType) {
+                    case "data_query" -> responseDTO = handleDataQuery(requestDTO).getBody();
+                    case "tool_call" -> responseDTO = handleToolCall(requestDTO).getBody();
+                    case "knowledge_qa" -> responseDTO.setAnswer(handleKnowledgeQa(originalQuestion));
+                    default -> responseDTO.setAnswer(handleKnowledgeQa(originalQuestion));
                 }
             }
 
-            // 4. 返回响应
             log.info("返回应答：{}", gson.toJson(responseDTO));
             return ResponseEntity.ok(responseDTO);
 
         } catch (Exception e) {
-            // 全局异常处理
             log.error("请求处理异常", e);
             responseDTO.setAnswer("系统繁忙，请稍后重试：" + e.getMessage());
             return ResponseEntity.ok(responseDTO);
         }
     }
-
     /**
      * 处理知识问答：直接返回结果，无结果时返回固定字符串
      */
@@ -346,7 +343,35 @@ public class ExamController {
 
         return ResponseEntity.ok(responseDTO);
     }
-
+    /**
+     * 构建工具选择的提示词（告知大模型可用工具及参数要求）
+     */
+    private String buildToolSelectionPrompt(String question, String content) {
+        return String.format("""
+                请根据用户问题选择合适的工具执行，可用工具如下：
+                1. %s：处理需要查询数据库的问题，参数为用户问题和补充信息
+                2. %s：处理常识性、知识性问题，参数为用户问题
+                3. credit-card-tool：查询信用卡账单，参数需包含卡号、月份
+                4. exchange-rate-tool：查询汇率，参数需包含源货币、目标货币、金额
+                5. utility-bill-tool：查询水电煤账单，参数需包含户号、类型、月份
+                6. user-asset-tool：查询用户资产，参数需包含用户ID
+                7. payment-order-tool：创建支付订单，参数需包含金额、商户号
+                8. %s：获取当前日期，无参数
+                9. %s：计算数学表达式，参数为表达式字符串
+                
+                用户问题：%s
+                补充信息：%s
+                
+                请返回JSON格式：{"toolName":"工具名","parameters":{"参数名":"参数值"}}，若无需工具直接返回{"toolName":"none","message":"回答内容"}
+                """,
+                ChatService.DATA_QUERY_TOOL,
+                ChatService.KNOWLEDGE_QA_TOOL,
+                ChatService.CURRENT_DATE_TOOL,
+                ChatService.CALCULATOR_TOOL,
+                question,
+                (content == null ? "无" : content)
+        );
+    }
     /**
      * 工具调用逻辑
      */

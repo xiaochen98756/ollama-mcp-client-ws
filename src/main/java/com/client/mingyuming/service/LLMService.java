@@ -9,7 +9,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import com.client.mingyuming.dto.ChatRequest.Message;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +50,27 @@ public class LLMService {
     // 仅依赖 RestTemplate，构造方法注入
     public LLMService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
+    }
+    /**
+     * 调用大模型生成工具决策
+     */
+    public String generateToolDecision(String prompt) {
+        ChatRequest chatRequest = new ChatRequest();
+        List<Message> messages = new ArrayList<>();
+        // 系统提示：要求返回工具决策JSON
+        Message systemMsg = new Message();
+        systemMsg.setRole("system");
+        systemMsg.setContent("你是工具选择助手，请严格按照指定格式返回工具决策结果，仅返回JSON，不添加额外内容。");
+        messages.add(systemMsg);
+        // 用户提示：包含问题和工具列表
+        Message userMsg = new Message();
+        userMsg.setRole("user");
+        userMsg.setContent(prompt);
+        messages.add(userMsg);
+        chatRequest.setMessages(messages);
+
+        // 调用大模型并返回结果
+        return generateResponse(chatRequest);
     }
 
     /**
