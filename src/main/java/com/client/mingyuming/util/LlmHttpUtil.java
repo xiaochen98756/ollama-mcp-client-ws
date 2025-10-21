@@ -105,14 +105,8 @@ public class LlmHttpUtil {
             }
             String trimmedAnswer = answer.trim();
 
-            // 8. 如果是 SQL 生成模型，自动清理转义字符
-            String processedAnswer = trimmedAnswer;
-            if (modelName.contains("SQL生成大模型")) {
-                processedAnswer = cleanSql(trimmedAnswer);
-                log.info("【{}】SQL 清理前：{}，清理后：{}", modelName, trimmedAnswer, processedAnswer);
-            }
             // 0. 差异化处理 answer 并返回
-            return answerProcessor.apply(processedAnswer);
+            return answerProcessor.apply(trimmedAnswer);
 
         } catch (Exception e) {
             log.error("【{}】大模型调用异常",modelName, e);
@@ -126,7 +120,7 @@ public class LlmHttpUtil {
     /**
      * 清理 SQL 中的双重转义字符（适配字符串中已转义的场景）
      */
-    private String cleanSql(String sql) {
+    public String cleanSql(String sql) {
         if (sql == null || sql.trim().isEmpty()) {
             return sql;
         }

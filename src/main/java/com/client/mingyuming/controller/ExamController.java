@@ -348,14 +348,13 @@ public class ExamController {
                             finalUserQuestion,
                             // SQL处理器：提取纯SQL
                             trimmedAnswer -> {
-                                final String SQL_PREFIX = "```sql";
-                                final String SQL_SUFFIX = "```";
-                                int prefixEnd = trimmedAnswer.indexOf(SQL_PREFIX);
-                                int suffixStart = trimmedAnswer.indexOf(SQL_SUFFIX, prefixEnd + SQL_PREFIX.length());
-                                if (prefixEnd == -1 || suffixStart == -1) {
-                                    throw new RuntimeException("SQL格式错误");
+                                // 1. 去除首尾空格
+                                String rawSql = trimmedAnswer.trim();
+                                if (rawSql.isEmpty()) {
+                                    throw new RuntimeException("SQL生成结果为空");
                                 }
-                                return trimmedAnswer.substring(prefixEnd + SQL_PREFIX.length(), suffixStart).trim();
+                                // 2. 调用清理方法处理转义字符（复用LlmHttpUtil的cleanSql）
+                                return llmHttpUtil.cleanSql(rawSql);
                             }
                     );
                     excuteSql.set(sql);
