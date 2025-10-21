@@ -154,54 +154,57 @@ public class ExamController {
         responseDTO.setId(requestDTO.getId());
 
         try {
-            // 2. 先调用知识问答
-            String knowledgeAnswer = handleKnowledgeQa(
-                    originalQuestion,
-                    requestDTO.getContent(),
-                    requestDTO.getCategory()
-            );
-            log.info("知识问答结果：{}", knowledgeAnswer);
+            if (originalQuestion.contains("请查询")){
+                responseDTO = handleDataQuery(requestDTO).getBody();
+            }else {
+                // 2. 先调用知识问答
+                String knowledgeAnswer = handleKnowledgeQa(
+                        originalQuestion,
+                        requestDTO.getContent(),
+                        requestDTO.getCategory()
+                );
+                log.info("知识问答结果：{}", knowledgeAnswer);
 
-            // 3. 判断知识问答是否有效
-            if (!"根据已有知识无法回答".equals(knowledgeAnswer.trim())) {
-                // 3.1 知识问答有有效结果，直接返回
-                responseDTO.setAnswer(knowledgeAnswer);
-                log.info("知识问答返回有效结果，直接响应");
-                log.info("返回应答：{}", gson.toJson(responseDTO));
-                return ResponseEntity.ok(responseDTO);
-            }
+                // 3. 判断知识问答是否有效
+                if (!"根据已有知识无法回答".equals(knowledgeAnswer.trim())) {
+                    // 3.1 知识问答有有效结果，直接返回
+                    responseDTO.setAnswer(knowledgeAnswer);
+                    log.info("知识问答返回有效结果，直接响应");
+                    log.info("返回应答：{}", gson.toJson(responseDTO));
+                    return ResponseEntity.ok(responseDTO);
+                }
 
-            // 3.2 知识问答无结果，调用意图识别（判断是否需要工具调用）
-            log.info("知识问答无结果，调用意图识别模型");
-            String intentResult = llmHttpUtil.call(
-                    "意图识别大模型",
-                    classifyBaseUrl,
-                    classifyChatId,
-                    classifySessionId,
-                    classifyAuth,
-                    originalQuestion,  // 只传入问题
-                    // 意图识别处理器：解析返回值是否为"yes"
-                    trimmedAnswer -> trimmedAnswer.trim().toLowerCase()
-            );
-            log.info("意图识别结果：{}", intentResult);
+                // 3.2 知识问答无结果，调用意图识别（判断是否需要工具调用）
+                log.info("知识问答无结果，调用意图识别模型");
+                String intentResult = llmHttpUtil.call(
+                        "意图识别大模型",
+                        classifyBaseUrl,
+                        classifyChatId,
+                        classifySessionId,
+                        classifyAuth,
+                        originalQuestion,  // 只传入问题
+                        // 意图识别处理器：解析返回值是否为"yes"
+                        trimmedAnswer -> trimmedAnswer.trim().toLowerCase()
+                );
+                log.info("意图识别结果：{}", intentResult);
 
-            // 4. 按意图识别结果路由
-            if ("1".equals(intentResult.trim())) {
-                // 4.1 意图为"yes"，执行工具调用
-                log.info("意图识别为'yes'，路由到工具调用");
-                responseDTO = handleToolCall(requestDTO).getBody();
-            } else {
-                //如果是选择题 就调用工具调用
-                if ("选择题".equals(requestDTO.getCategory() != null ? requestDTO.getCategory().trim() : "")) {
-                    log.info("选择题，路由到工具调用");
+                // 4. 按意图识别结果路由
+                if ("1".equals(intentResult.trim())) {
+                    // 4.1 意图为"yes"，执行工具调用
+                    log.info("意图识别为'yes'，路由到工具调用");
                     responseDTO = handleToolCall(requestDTO).getBody();
-                }else{
-                    //问答题，执行数据查询
-                    log.info("意图识别为'{}'，路由到数据查询", intentResult);
-                    responseDTO = handleDataQuery(requestDTO).getBody();
+                } else {
+                    //如果是选择题 就调用工具调用
+                    if ("选择题".equals(requestDTO.getCategory() != null ? requestDTO.getCategory().trim() : "")) {
+                        log.info("选择题，路由到工具调用");
+                        responseDTO = handleToolCall(requestDTO).getBody();
+                    }else{
+                        //问答题，执行数据查询
+                        log.info("意图识别为'{}'，路由到数据查询", intentResult);
+                        responseDTO = handleDataQuery(requestDTO).getBody();
+                    }
                 }
             }
-
             // 5. 返回响应
             log.info("返回应答：{}", gson.toJson(responseDTO));
             return ResponseEntity.ok(responseDTO);
