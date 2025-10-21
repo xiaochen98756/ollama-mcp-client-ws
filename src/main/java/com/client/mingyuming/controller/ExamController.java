@@ -10,7 +10,6 @@ import com.client.mingyuming.service.MysqlQueryService;
 import com.client.mingyuming.util.LlmHttpUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,15 +18,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -144,7 +139,7 @@ public class ExamController {
 
     /**
      * 比赛核心接口：/api/exam
-     * 流程：接收请求 → 通用工具类调用分类模型 → 按类型路由 → 返回结果
+     * 优化流程：知识问答 → 空结果则意图识别 → 按"yes"/其他路由到工具调用/数据查询
      */
     @PostMapping("/exam")
     public ResponseEntity<ExamResponseDTO> handleExamRequest(
@@ -159,49 +154,48 @@ public class ExamController {
         responseDTO.setId(requestDTO.getId());
 
         try {
-            // 2. 核心：通用工具类调用分类模型（差异化处理器：解析 JSON 中的 requestType）
-            String requestType = llmHttpUtil.call(
+            // 2. 先调用知识问答
+            String knowledgeAnswer = handleKnowledgeQa(
+                    originalQuestion,
+                    requestDTO.getContent(),
+                    requestDTO.getCategory()
+            );
+            log.info("知识问答结果：{}", knowledgeAnswer);
+
+            // 3. 判断知识问答是否有效
+            if (!"根据已有知识无法回答".equals(knowledgeAnswer.trim())) {
+                // 3.1 知识问答有有效结果，直接返回
+                responseDTO.setAnswer(knowledgeAnswer);
+                log.info("知识问答返回有效结果，直接响应");
+                return ResponseEntity.ok(responseDTO);
+            }
+
+            // 3.2 知识问答无结果，调用意图识别（判断是否需要工具调用）
+            log.info("知识问答无结果，调用意图识别模型");
+            String intentResult = llmHttpUtil.call(
                     "意图识别大模型",
                     classifyBaseUrl,
                     classifyChatId,
                     classifySessionId,
                     classifyAuth,
-                    originalQuestion,
-                    // 分类模型 answer 处理器：解析 JSON 提取 requestType
-                    trimmedAnswer -> {
-                        Map<String, String> answerJson = gson.fromJson(
-                                trimmedAnswer, new TypeToken<Map<String, String>>() {}.getType()
-                        );
-                        String type = answerJson.getOrDefault("requestType", "").trim();
-                        // 非法类型降级为知识问答
-                        return ("knowledge_qa".equals(type) || "tool_call".equals(type) || "data_query".equals(type))
-                                ? type : "knowledge_qa";
-                    }
+                    originalQuestion,  // 只传入问题
+                    // 意图识别处理器：解析返回值是否为"yes"
+                    trimmedAnswer -> trimmedAnswer.trim().toLowerCase()
             );
+            log.info("意图识别结果：{}", intentResult);
 
-            // 3. 按分类结果路由
-            switch (requestType) {
-                case "data_query" ->
-                        responseDTO = handleDataQuery(requestDTO).getBody();
-                case "tool_call" ->
-                        responseDTO = handleToolCall(requestDTO).getBody();
-                case "knowledge_qa" ->
-                        responseDTO.setAnswer(handleKnowledgeQa(
-                                originalQuestion,
-                                requestDTO.getContent(),  // 选项内容
-                                requestDTO.getCategory()  // 题型："选择题"/"问答题"
-                        ));
-                default -> {
-                    log.info("未知请求类型：{}，降级为知识问答", requestType);
-                    responseDTO.setAnswer(handleKnowledgeQa(
-                            originalQuestion,
-                            requestDTO.getContent(),  // 选项内容
-                            requestDTO.getCategory()  // 题型："选择题"/"问答题"
-                    ));
-                }
+            // 4. 按意图识别结果路由
+            if ("1".equals(intentResult.trim())) {
+                // 4.1 意图为"yes"，执行工具调用
+                log.info("意图识别为'yes'，路由到工具调用");
+                responseDTO = handleToolCall(requestDTO).getBody();
+            } else {
+                // 4.2 意图为其他，执行数据查询
+                log.info("意图识别为'{}'，路由到数据查询", intentResult);
+                responseDTO = handleDataQuery(requestDTO).getBody();
             }
 
-            // 4. 返回响应
+            // 5. 返回响应
             log.info("返回应答：{}", gson.toJson(responseDTO));
             return ResponseEntity.ok(responseDTO);
 
@@ -214,14 +208,11 @@ public class ExamController {
     }
 
     /**
-     * 处理知识问答：通过 category 区分选择题和问答题
-     * @param question 问题内容
-     * @param content 选项内容（选择题时有效）
-     * @param category 题型（"选择题"/"问答题"，必传）
+     * 处理知识问答：优化空结果返回值，统一为"根据已有知识无法回答"
      */
     private String handleKnowledgeQa(String question, String content, String category) {
         try {
-            // 1. 第一次调用知识问答大模型（基础逻辑不变）
+            // 1. 第一次调用知识问答大模型
             String firstAnswer = llmHttpUtil.call(
                     "知识问答大模型",
                     knowledgeBaseUrl,
@@ -232,10 +223,9 @@ public class ExamController {
                     trimmedAnswer -> trimmedAnswer
             );
 
-            // 2. 检查第一次结果，必要时进行第二次调用（兜底逻辑不变）
+            // 2. 检查第一次结果，必要时进行第二次调用（兜底）
             String baseAnswer = firstAnswer;
-            if (firstAnswer == null || firstAnswer.trim().isEmpty() || firstAnswer.contains("我没找到答案")
-                    || firstAnswer.contains("没找到答案") || firstAnswer.contains("无结果") || firstAnswer.contains("无法回答")) {
+            if (isInvalidKnowledgeAnswer(firstAnswer)) {
                 baseAnswer = llmHttpUtil.call(
                         "知识问答大模型（第二次）",
                         knowledgeBaseUrl,
@@ -247,11 +237,16 @@ public class ExamController {
                 );
             }
 
-            // 3. 根据 category 判断题型（核心修改：使用明确的题型字段）
-            // 注意：category 是必传参数，需确保不为 null
-            if ("选择题".equals(category.trim())) {
-                // 3.1 选择题：调用新的大模型匹配选项（结合 content 中的选项）
-                log.info("检测到选择题，开始匹配选项：问题={}, 选项={}", question, content);
+            // 3. 最终结果判断（统一空结果返回值）
+            if (isInvalidKnowledgeAnswer(baseAnswer)) {
+                log.info("知识问答无有效结果，返回统一标识");
+                return "根据已有知识无法回答";
+            }
+
+            // 4. 根据题型处理
+            if ("选择题".equals(category != null ? category.trim() : "")) {
+                // 选择题：调用选项匹配模型
+                log.info("检测到选择题，匹配选项");
                 return llmHttpUtil.call(
                         "选择题选项匹配大模型",
                         choiceMatchBaseUrl,
@@ -265,22 +260,30 @@ public class ExamController {
                         }
                 );
             } else {
-                // 3.2 问答题/其他题型：直接返回基础答案
-                return baseAnswer == null || baseAnswer.trim().isEmpty() || baseAnswer.contains("没找到答案")
-                        ? "我没找到答案"
-                        : baseAnswer;
+                // 问答题：直接返回基础答案
+                return baseAnswer;
             }
         } catch (Exception e) {
             log.error("知识问答大模型调用失败：question={}, category={}", question, category, e);
-            return "我没找到答案";
+            return "根据已有知识无法回答";  // 异常时也返回统一空结果标识
         }
     }
-// ------------------------------
-// 新增辅助方法
-// ------------------------------
 
     /**
-     * 构建选择题选项匹配提示词
+     * 判断知识问答结果是否无效（统一标准）
+     */
+    private boolean isInvalidKnowledgeAnswer(String answer) {
+        return answer == null
+                || answer.trim().isEmpty()
+                || answer.contains("我没找到答案")
+                || answer.contains("没找到答案")
+                || answer.contains("无结果")
+                || answer.contains("无法回答")
+                || answer.contains("根据已有知识无法回答");
+    }
+
+    /**
+     * 构建选择题选项匹配提示词（优化指令清晰度）
      */
     private String buildChoicePrompt(String baseAnswer, String options) {
         return String.format("""
