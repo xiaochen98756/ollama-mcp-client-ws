@@ -51,7 +51,7 @@ public class LlmHttpUtil {
         try {
             // 1. 构建请求 URL
             String requestUrl = baseUrl + "/api/v1/chats/" + chatId + "/completions";
-            log.info("调用【{}】大模型：URL={}, 问题={}",modelName, requestUrl, question);
+            log.info("调用【{}】大模型：URL={}",modelName, requestUrl);
 
             // 2. 构建请求头
             HttpHeaders headers = new HttpHeaders();
@@ -64,6 +64,8 @@ public class LlmHttpUtil {
                     "stream", false,
                     "session_id", sessionId
             );
+            log.info("调用【{}】大模型body={}",modelName, gson.toJson(requestBody));
+
             HttpEntity<String> requestEntity = new HttpEntity<>(
                     gson.toJson(requestBody), headers
             );

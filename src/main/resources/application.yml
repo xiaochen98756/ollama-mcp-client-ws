@@ -149,3 +149,9 @@ llm:
     chat-id: 944e70c2ae1c11f08e328b0a80799ddb
     session-id: 505db2a0c2ce4e2487fa86b633db929e
     authorization: Bearer ragflow-UxMTkwOTI2YWRhOTExZjA4ZTMyOGIwYT
+  # 工具调用结果整合模型配置（与选择题选项匹配模型共用参数）
+  tool-result-integrate:
+    base-url: http://localhost:20005
+    chat-id: 83ad9202adae11f08e328b0a80799ddb
+    session-id: 0e1ef5d05a61430f8c8d6975ad1acf5a
+    authorization: Bearer ragflow-UxMTkwOTI2YWRhOTExZjA4ZTMyOGIwYT

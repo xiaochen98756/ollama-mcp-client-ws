@@ -50,7 +50,18 @@ public class ExamController {
     private String classifySessionId;
     @Value("${llm.classify.authorization}")
     private String classifyAuth;
+    // 工具调用结果整合模型参数（完整配置）
+    @Value("${llm.tool-result-integrate.base-url}")
+    private String toolResultIntegrateBaseUrl;
 
+    @Value("${llm.tool-result-integrate.chat-id}")
+    private String toolResultIntegrateChatId;  // 新增
+
+    @Value("${llm.tool-result-integrate.session-id}")
+    private String toolResultIntegrateSessionId;  // 新增
+
+    @Value("${llm.tool-result-integrate.authorization}")
+    private String toolResultIntegrateAuth;  // 保留原参数
 
     // SQL 生成模型参数
     @Value("${llm.sql-generate.base-url}")
@@ -104,9 +115,6 @@ public class ExamController {
     @Value("${llm.choice-match.authorization}")
     private String choiceMatchAuth;
 
-    // 注入工具结果处理提示词
-    @Value("${llm.tool-result-prompt}")
-    private String toolResultPrompt;
     // ------------------------------
     // 2. 注入服务和工具
     // ------------------------------
@@ -415,10 +423,12 @@ public class ExamController {
      * 工具调用逻辑
      */
     private ResponseEntity<ExamResponseDTO> handleToolCall(ExamRequestDTO requestDTO) {
+        // ------------------------------
+        // 1. 调用工具生成指令并执行，获取原始结果
+        // ------------------------------
         ChatRequest chatRequest = new ChatRequest();
         List<Message> messages = new ArrayList<>();
 
-        // 1. 原有逻辑：调用工具生成指令并执行
         // 系统提示（工具调用规则）
         Message systemMsg = new Message();
         systemMsg.setRole("system");
@@ -426,16 +436,16 @@ public class ExamController {
         messages.add(systemMsg);
 
         // 用户问题（合并 question 和 content）
-        Message userMsg = new Message();
         String userQuestion = requestDTO.getQuestion() +
                 (requestDTO.getContent() != null ? "\n补充信息：" + requestDTO.getContent() : "");
+        Message userMsg = new Message();
         userMsg.setRole("user");
         userMsg.setContent(userQuestion);
         messages.add(userMsg);
 
         chatRequest.setMessages(messages);
 
-        // 调用大模型获取调用哪个工具
+        // 调用大模型获取工具指令
         String toolCmd = llmService.generateResponse(chatRequest);
         log.info("试题ID={}，工具指令：{}", requestDTO.getId(), toolCmd);
 
@@ -444,35 +454,67 @@ public class ExamController {
         log.info("试题ID={}，工具原始结果：{}", requestDTO.getId(), toolResult);
 
 
-        // 2. 新增：调用大模型处理工具结果（按题目类型格式化）
-        // 2.1 获取题目类型（从requestDTO获取，如"选择题"或"问答题"）
-        String questionType = requestDTO.getCategory();  // 假设DTO中已有category字段存储题目类型
+        // ------------------------------
+        // 2. 调用【工具调用结果整合】模型（使用配置参数）
+        // ------------------------------
+        String questionType = requestDTO.getCategory(); // 获取题型
         log.info("试题ID={}，题目类型：{}", requestDTO.getId(), questionType);
 
-        // 2.2 构建结果处理的提示词（替换占位符）
-        String formattedPrompt = String.format(toolResultPrompt, questionType, toolResult);
+        // 构建整合提示词
+        String integratePrompt = String.format(
+                "用户问题：%s\n工具调用原始结果：%s\n",
+                userQuestion, toolResult
+        );
 
-        // 2.3 构建新的ChatRequest，用于结果处理
-        ChatRequest resultProcessRequest = new ChatRequest();
-        List<Message> resultMessages = new ArrayList<>();
-        // 系统提示：指定结果处理规则
-        Message resultSystemMsg = new Message();
-        resultSystemMsg.setRole("system");
-        resultSystemMsg.setContent(formattedPrompt);
-        resultMessages.add(resultSystemMsg);
-        // 用户消息：触发处理（可空，或重复问题便于模型理解）
-        Message resultUserMsg = new Message();
-        resultUserMsg.setRole("user");
-        resultUserMsg.setContent("请根据上述规则处理结果并返回最终答案");
-        resultMessages.add(resultUserMsg);
-        resultProcessRequest.setMessages(resultMessages);
-
-        // 2.4 调用大模型生成最终答案（复用现有方法）
-        String finalAnswer = llmService.generateResponse(resultProcessRequest);
-        log.info("试题ID={}，格式化后最终答案：{}", requestDTO.getId(), finalAnswer);
+        // 调用【工具调用结果整合】模型（使用 tool-result-integrate 配置）
+        String integratedResult = llmHttpUtil.call(
+                "工具调用结果整合",
+                toolResultIntegrateBaseUrl,  // 从配置文件注入
+                toolResultIntegrateChatId,   // 新增：从配置文件注入chat-id
+                toolResultIntegrateSessionId,// 新增：从配置文件注入session-id
+                toolResultIntegrateAuth,     // 从配置文件注入（保留此参数）
+                integratePrompt,
+                trimmedAnswer -> trimmedAnswer
+        );
+        log.info("试题ID={}，工具结果整合后：{}", requestDTO.getId(), integratedResult);
 
 
-        // 3. 封装响应
+        // ------------------------------
+        // 3. 判断题型，选择题需进一步匹配选项
+        // ------------------------------
+        String finalAnswer;
+        if ("选择题".equals(questionType.trim())) {
+            // 3.1 选择题：调用【知识问答选择题选项匹配模型】（使用 choice-match 配置）
+            String choicePrompt = String.format(
+                    "参考答案：%s\n选项：%s\n",
+                     integratedResult, requestDTO.getContent()
+            );
+
+            finalAnswer = llmHttpUtil.call(
+                    "知识问答选择题选项匹配模型",
+                    choiceMatchBaseUrl,
+                    choiceMatchChatId,
+                    choiceMatchSessionId,
+                    choiceMatchAuth,
+                    choicePrompt,
+                    trimmedAnswer -> {
+                        if (trimmedAnswer == null || trimmedAnswer.trim().isEmpty()) {
+                            return "无法匹配选项";
+                        }
+                        String trimmed = trimmedAnswer.trim();
+                        return trimmed.matches("^[A-D].*") ? trimmed.substring(0, 1) : trimmed;
+                    }
+            );
+            log.info("试题ID={}，选择题选项匹配后答案：{}", requestDTO.getId(), finalAnswer);
+        } else {
+            // 3.2 问答题：直接使用整合结果
+            finalAnswer = integratedResult;
+        }
+
+
+        // ------------------------------
+        // 4. 封装响应
+        // ------------------------------
         ExamResponseDTO responseDTO = new ExamResponseDTO();
         responseDTO.setSegments(requestDTO.getSegments());
         responseDTO.setPaper(requestDTO.getPaper());

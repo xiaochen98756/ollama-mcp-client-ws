@@ -137,7 +137,7 @@ public class ChatService {
 
         } catch (JsonSyntaxException e) {
             // 关键：打印原始输入和预处理后的内容，便于定位问题
-            log.error("JSON 解析失败！ 预处理后：{}", toolJson, e);
+            log.info("JSON 解析失败！ 预处理后：{}", toolJson, e);
             return PARAM_ERROR_MSG + "：JSON格式无效（未完全解析，可能包含多余内容）";
         } catch (HttpClientErrorException e) {
             log.error("工具API调用错误（状态码：{}）", e.getStatusCode(), e);
