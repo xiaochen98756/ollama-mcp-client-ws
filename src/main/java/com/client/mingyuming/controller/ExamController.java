@@ -178,10 +178,18 @@ public class ExamController {
                 case "tool_call" ->
                         responseDTO = handleToolCall(requestDTO).getBody();
                 case "knowledge_qa" ->
-                        responseDTO.setAnswer(handleKnowledgeQa(originalQuestion, requestDTO.getContent()));
+                        responseDTO.setAnswer(handleKnowledgeQa(
+                                originalQuestion,
+                                requestDTO.getContent(),  // 选项内容
+                                requestDTO.getCategory()  // 题型："选择题"/"问答题"
+                        ));
                 default -> {
                     log.info("未知请求类型：{}，降级为知识问答", requestType);
-                    responseDTO.setAnswer(handleKnowledgeQa(originalQuestion, requestDTO.getContent()));
+                    responseDTO.setAnswer(handleKnowledgeQa(
+                            originalQuestion,
+                            requestDTO.getContent(),  // 选项内容
+                            requestDTO.getCategory()  // 题型："选择题"/"问答题"
+                    ));
                 }
             }
 
@@ -196,10 +204,14 @@ public class ExamController {
             return ResponseEntity.ok(responseDTO);
         }
     }
+
     /**
-     * 处理知识问答：区分选择题和问答题，选择题新增选项匹配逻辑
+     * 处理知识问答：通过 category 区分选择题和问答题
+     * @param question 问题内容
+     * @param content 选项内容（选择题时有效）
+     * @param category 题型（"选择题"/"问答题"，必传）
      */
-    private String handleKnowledgeQa(String question, String content) {
+    private String handleKnowledgeQa(String question, String content, String category) {
         try {
             // 1. 第一次调用知识问答大模型（基础逻辑不变）
             String firstAnswer = llmHttpUtil.call(
@@ -227,40 +239,34 @@ public class ExamController {
                 );
             }
 
-            // 3. 判断是否为选择题（根据问题包含"?"且选项存在）
-            boolean isMultipleChoice = question.contains("?")
-                    && content != null
-                    && (content.contains("A)") || content.contains("A.")
-                    || content.contains("选项") || content.contains("答案"));
-
-            if (isMultipleChoice) {
-                // 3.1 选择题：调用新的大模型匹配选项
+            // 3. 根据 category 判断题型（核心修改：使用明确的题型字段）
+            // 注意：category 是必传参数，需确保不为 null
+            if ("选择题".equals(category.trim())) {
+                // 3.1 选择题：调用新的大模型匹配选项（结合 content 中的选项）
                 log.info("检测到选择题，开始匹配选项：问题={}, 选项={}", question, content);
                 return llmHttpUtil.call(
-                        "选择题选项匹配大模型",  // 新增模型名称
-                        choiceMatchBaseUrl,     // 新增：选项匹配模型URL（需在配置文件中定义）
-                        choiceMatchChatId,      // 新增：选项匹配模型chatId
-                        choiceMatchSessionId,   // 新增：选项匹配模型sessionId
-                        choiceMatchAuth,        // 新增：选项匹配模型鉴权信息
-                        buildChoicePrompt(baseAnswer, content),  // 构建匹配提示词
+                        "选择题选项匹配大模型",
+                        choiceMatchBaseUrl,
+                        choiceMatchChatId,
+                        choiceMatchSessionId,
+                        choiceMatchAuth,
+                        buildChoicePrompt( baseAnswer, content),
                         trimmedAnswer -> {
-                            // 提取最终选项（如"A"、"B"等）
                             String option = extractOption(trimmedAnswer);
                             return option != null ? option : "根据已有知识无法回答";
                         }
                 );
             } else {
-                // 3.2 问答题：直接返回基础答案
+                // 3.2 问答题/其他题型：直接返回基础答案
                 return baseAnswer == null || baseAnswer.trim().isEmpty() || baseAnswer.contains("没找到答案")
                         ? "我没找到答案"
                         : baseAnswer;
             }
         } catch (Exception e) {
-            log.error("知识问答大模型调用失败：question={}", question, e);
+            log.error("知识问答大模型调用失败：question={}, category={}", question, category, e);
             return "我没找到答案";
         }
     }
-
 // ------------------------------
 // 新增辅助方法
 // ------------------------------
