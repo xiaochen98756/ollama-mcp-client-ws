@@ -399,30 +399,13 @@ public class ExamController {
             log.info("试题ID={}，双路径结果归集：result1（生成SQL → 本地执行）={}, result2（直接调用数据查询大模型获取结果）={}",
                     requestDTO.getId(), result1, result2);
 
-            // 5. 调用第三个大模型：整合两个结果生成最终答案
-            String finalQuestion = String.format(
-                    "用户问题：%s\n结果1：%s,执行sql：%s\n结果2：%s",
-                    userQuestion, result1, excuteSql.get(),result2
-            );
-            String finalAnswer = llmHttpUtil.call(
-                    "数据比对拼接大模型",
-                    finalResultBaseUrl,
-                    finalResultChatId,
-                    finalResultSessionId,
-                    finalResultAuth,
-                    finalQuestion,
-                    // 最终结果处理器：直接返回整合后的文本
-                    trimmedAnswer -> trimmedAnswer
-            );
+
             // 处理无结果场景
-            if (result1.contains("路径1执行失败") && result2.contains("路径2执行失败")) {
-                responseDTO.setAnswer("无结果");
-            } else if ("00".equals(finalAnswer.trim())) {
+            if (result1.contains("路径1执行失败")) {
                 responseDTO.setAnswer(result2);
-                log.info("试题ID={}，最终整合结果：{}", requestDTO.getId(), result2);
             } else {
-                responseDTO.setAnswer(finalAnswer);
-                log.info("试题ID={}，最终整合结果：{}", requestDTO.getId(), finalAnswer);
+                responseDTO.setAnswer(result1);
+                log.info("试题ID={}，最终整合结果：{}", requestDTO.getId(), result1);
             }
         } catch (Exception e) {
             log.error("试题ID={}，数据查询整体处理失败", requestDTO.getId(), e);
