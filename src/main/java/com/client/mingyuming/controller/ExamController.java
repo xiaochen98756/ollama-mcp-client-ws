@@ -361,7 +361,31 @@ public class ExamController {
                     log.info("试题ID={}，路径1（生成SQL → 本地执行）生成SQL：{}", requestDTO.getId(), sql);
 
                     // 2.2 本地执行SQL并返回结果
-                    return mysqlQueryService.executeQuery(sql);
+                    String res= mysqlQueryService.executeQuery(sql);
+                    if ("".equals(res)||"无结果".equals(res)){
+                        // 2.1 调用SQL生成模型获取SQL
+                        String sql2 = llmHttpUtil.call(
+                                "SQL生成大模型",
+                                sqlBaseUrl,
+                                sqlChatId,
+                                sqlSessionId,
+                                sqlAuth,
+                                finalUserQuestion,
+                                // SQL处理器：提取纯SQL
+                                trimmedAnswer -> {
+                                    // 1. 去除首尾空格
+                                    String rawSql = trimmedAnswer.trim();
+                                    if (rawSql.isEmpty()) {
+                                        throw new RuntimeException("SQL生成结果为空");
+                                    }
+                                    // 2. 调用清理方法处理转义字符（复用LlmHttpUtil的cleanSql）
+                                    return llmHttpUtil.cleanSql(rawSql);
+                                }
+                        );
+                        excuteSql.set(sql2);
+                        return mysqlQueryService.executeQuery(sql2);
+                    }
+                    return res;
                 } catch (Exception e) {
                     log.error("试题ID={}，路径1执行失败", requestDTO.getId(), e);
                     return "路径1执行失败：" + e.getMessage();
