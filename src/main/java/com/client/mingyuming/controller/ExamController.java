@@ -167,6 +167,7 @@ public class ExamController {
                 // 3.1 知识问答有有效结果，直接返回
                 responseDTO.setAnswer(knowledgeAnswer);
                 log.info("知识问答返回有效结果，直接响应");
+                log.info("返回应答：{}", gson.toJson(responseDTO));
                 return ResponseEntity.ok(responseDTO);
             }
 
@@ -190,9 +191,15 @@ public class ExamController {
                 log.info("意图识别为'yes'，路由到工具调用");
                 responseDTO = handleToolCall(requestDTO).getBody();
             } else {
-                // 4.2 意图为其他，执行数据查询
-                log.info("意图识别为'{}'，路由到数据查询", intentResult);
-                responseDTO = handleDataQuery(requestDTO).getBody();
+                //如果是选择题 就调用工具调用
+                if ("选择题".equals(requestDTO.getCategory() != null ? requestDTO.getCategory().trim() : "")) {
+                    log.info("选择题，路由到工具调用");
+                    responseDTO = handleToolCall(requestDTO).getBody();
+                }else{
+                    //问答题，执行数据查询
+                    log.info("意图识别为'{}'，路由到数据查询", intentResult);
+                    responseDTO = handleDataQuery(requestDTO).getBody();
+                }
             }
 
             // 5. 返回响应

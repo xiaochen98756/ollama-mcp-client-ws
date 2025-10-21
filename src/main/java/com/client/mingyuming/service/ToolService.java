@@ -33,21 +33,24 @@ public class ToolService {
         }
 
         try {
-            // 1. 表达式预处理（统一格式，支持 sqrt、指数等）
+            // 1. 表达式预处理（适配 JEXL 实例方法调用语法）
             String processedExpr = preprocessExpression(expression);
             log.debug("预处理后的计算表达式：{}", processedExpr);
 
-            // 2. 创建 JEXL 表达式（线程安全，可复用）
+            // 2. 创建 JEXL 表达式
             JexlExpression jexlExpr = JEXL_ENGINE.createExpression(processedExpr);
 
-            // 3. 执行计算（无变量传递，用空上下文）
-            Object result = jexlExpr.evaluate(new MapContext());
+            // 3. 创建上下文，注册 Math 实例（关键修复：用实例而非 Class）
+            MapContext context = new MapContext();
+            context.set("math", Math.class); // 注册为 "math" 实例（全小写，避免与关键字冲突）
 
-            // 4. 格式化结果（整数转 long，避免 10.0 这类显示）
+            // 4. 执行计算
+            Object result = jexlExpr.evaluate(context);
+
+            // 5. 格式化结果
             return formatResult(result);
 
         } catch (JexlException e) {
-            // 捕获表达式语法错误（如括号不匹配、无效运算符）
             log.error("JEXL 表达式错误：{}", expression, e);
             return PARAM_ERROR_MSG + "：无效表达式（" + e.getMessage().split("\n")[0] + "）";
         } catch (Exception e) {
@@ -57,15 +60,18 @@ public class ToolService {
     }
 
     /**
-     * 表达式预处理：适配 JEXL 语法，支持常见运算
+     * 表达式预处理：适配 JEXL 实例方法调用语法（使用 math 实例）
      */
     private String preprocessExpression(String expr) {
-        // 1. 替换 ^ 为 Math.pow(a, b)（JEXL 不支持 ^ 作为指数运算符）
-        String processed = expr.replaceAll("(\\d+)\\^(\\d+)", "Math.pow($1, $2)");
-        // 2. 替换 sqrt(xxx) 为 Math.sqrt(xxx)（JEXL 支持调用 Java 静态方法）
-        processed = processed.replaceAll("sqrt\\(([^)]+)\\)", "Math.sqrt($1)");
-        // 3. 去除多余空格（避免空格导致解析问题）
+        // 1. 替换 ^ 为 math.pow(a, b)（注意：这里用小写 math，与上下文注册的 key 一致）
+        String processed = expr.replaceAll("(\\-?\\d+(\\.\\d+)?)\\^(\\-?\\d+(\\.\\d+)?)", "math.pow($1, $3)");
+
+        // 2. 替换 sqrt(xxx) 为 math.sqrt(xxx)
+        processed = processed.replaceAll("sqrt\\(([^)]+)\\)", "math.sqrt($1)");
+
+        // 3. 去除多余空格
         processed = processed.replaceAll("\\s+", "");
+
         return processed;
     }
 
@@ -86,5 +92,10 @@ public class ToolService {
         }
         // 其他类型（理论上不会出现）
         return "计算结果：" + result.toString();
+    }
+
+    public static void main(String[] args) {
+        ToolService service=new ToolService();
+        System.out.println(service.calculate("36.18^7"));
     }
 }
