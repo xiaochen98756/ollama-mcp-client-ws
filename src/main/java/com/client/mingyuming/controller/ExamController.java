@@ -224,21 +224,21 @@ public class ExamController {
             );
 
             // 2. 检查第一次结果，必要时进行第二次调用（兜底）
-            String baseAnswer = firstAnswer;
-            if (isInvalidKnowledgeAnswer(firstAnswer)) {
-                baseAnswer = llmHttpUtil.call(
-                        "知识问答大模型（第二次）",
-                        knowledgeBaseUrl,
-                        knowledgeChatId,
-                        knowledgeSessionId,
-                        knowledgeAuth,
-                        question,
-                        trimmedAnswer -> trimmedAnswer
-                );
-            }
+//            String baseAnswer = firstAnswer;
+//            if (isInvalidKnowledgeAnswer(firstAnswer)) {
+//                baseAnswer = llmHttpUtil.call(
+//                        "知识问答大模型（第二次）",
+//                        knowledgeBaseUrl,
+//                        knowledgeChatId,
+//                        knowledgeSessionId,
+//                        knowledgeAuth,
+//                        question,
+//                        trimmedAnswer -> trimmedAnswer
+//                );
+//            }
 
             // 3. 最终结果判断（统一空结果返回值）
-            if (isInvalidKnowledgeAnswer(baseAnswer)) {
+            if (isInvalidKnowledgeAnswer(firstAnswer)) {
                 log.info("知识问答无有效结果，返回统一标识");
                 return "根据已有知识无法回答";
             }
@@ -253,7 +253,7 @@ public class ExamController {
                         choiceMatchChatId,
                         choiceMatchSessionId,
                         choiceMatchAuth,
-                        buildChoicePrompt( baseAnswer, content),
+                        buildChoicePrompt( firstAnswer, content),
                         trimmedAnswer -> {
                             String option = extractOption(trimmedAnswer);
                             return option != null ? option : "根据已有知识无法回答";
@@ -261,7 +261,7 @@ public class ExamController {
                 );
             } else {
                 // 问答题：直接返回基础答案
-                return baseAnswer;
+                return firstAnswer;
             }
         } catch (Exception e) {
             log.error("知识问答大模型调用失败：question={}, category={}", question, category, e);
