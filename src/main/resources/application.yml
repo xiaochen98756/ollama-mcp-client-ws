@@ -143,3 +143,9 @@ llm:
     chat-id: 74af9534acd711f08d920242ac110005
     session-id: 3fefee5ce66d46c190abe1946c088f34
     authorization: Bearer ragflow-E1NmYyNGRhYWNiNjExZjBiNDM4MDI0Mm
+  # 知识问答选择题选项匹配模型配置
+  choice-match:
+    base-url: http://localhost:20005
+    chat-id: 944e70c2ae1c11f08e328b0a80799ddb
+    session-id: 505db2a0c2ce4e2487fa86b633db929e
+    authorization: Bearer ragflow-UxMTkwOTI2YWRhOTExZjA4ZTMyOGIwYT

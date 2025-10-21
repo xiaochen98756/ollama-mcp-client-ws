@@ -92,6 +92,18 @@ public class ExamController {
     @Value("${llm.knowledge-chat.authorization}")
     private String knowledgeAuth;
 
+    @Value("${llm.choice-match.base-url}")
+    private String choiceMatchBaseUrl;
+
+    @Value("${llm.choice-match.chat-id}")
+    private String choiceMatchChatId;
+
+    @Value("${llm.choice-match.session-id}")
+    private String choiceMatchSessionId;
+
+    @Value("${llm.choice-match.authorization}")
+    private String choiceMatchAuth;
+
     // 注入工具结果处理提示词
     @Value("${llm.tool-result-prompt}")
     private String toolResultPrompt;
@@ -166,10 +178,10 @@ public class ExamController {
                 case "tool_call" ->
                         responseDTO = handleToolCall(requestDTO).getBody();
                 case "knowledge_qa" ->
-                        responseDTO.setAnswer(handleKnowledgeQa(originalQuestion));
+                        responseDTO.setAnswer(handleKnowledgeQa(originalQuestion, requestDTO.getContent()));
                 default -> {
                     log.info("未知请求类型：{}，降级为知识问答", requestType);
-                    responseDTO.setAnswer(handleKnowledgeQa(originalQuestion));
+                    responseDTO.setAnswer(handleKnowledgeQa(originalQuestion, requestDTO.getContent()));
                 }
             }
 
@@ -184,13 +196,12 @@ public class ExamController {
             return ResponseEntity.ok(responseDTO);
         }
     }
-
     /**
-     * 处理知识问答：直接返回结果，无结果时返回固定字符串
+     * 处理知识问答：区分选择题和问答题，选择题新增选项匹配逻辑
      */
-    private String handleKnowledgeQa(String question) {
+    private String handleKnowledgeQa(String question, String content) {
         try {
-            // 第一次调用知识问答大模型
+            // 1. 第一次调用知识问答大模型（基础逻辑不变）
             String firstAnswer = llmHttpUtil.call(
                     "知识问答大模型",
                     knowledgeBaseUrl,
@@ -201,11 +212,11 @@ public class ExamController {
                     trimmedAnswer -> trimmedAnswer
             );
 
-            // 检查第一次结果是否为空、无意义或包含无结果相关表述
+            // 2. 检查第一次结果，必要时进行第二次调用（兜底逻辑不变）
+            String baseAnswer = firstAnswer;
             if (firstAnswer == null || firstAnswer.trim().isEmpty() || firstAnswer.contains("我没找到答案")
                     || firstAnswer.contains("没找到答案") || firstAnswer.contains("无结果") || firstAnswer.contains("无法回答")) {
-                // 进行第二次调用（兜底查询）
-                String secondAnswer = llmHttpUtil.call(
+                baseAnswer = llmHttpUtil.call(
                         "知识问答大模型（第二次）",
                         knowledgeBaseUrl,
                         knowledgeChatId,
@@ -214,16 +225,35 @@ public class ExamController {
                         question,
                         trimmedAnswer -> trimmedAnswer
                 );
+            }
 
-                // 检查第二次结果
-                if (secondAnswer == null || secondAnswer.trim().isEmpty() || secondAnswer.contains("我没找到答案")
-                        || secondAnswer.contains("没找到答案") || secondAnswer.contains("无结果") || secondAnswer.contains("无法回答")) {
-                    return "我没找到答案";
-                } else {
-                    return secondAnswer;
-                }
+            // 3. 判断是否为选择题（根据问题包含"?"且选项存在）
+            boolean isMultipleChoice = question.contains("?")
+                    && content != null
+                    && (content.contains("A)") || content.contains("A.")
+                    || content.contains("选项") || content.contains("答案"));
+
+            if (isMultipleChoice) {
+                // 3.1 选择题：调用新的大模型匹配选项
+                log.info("检测到选择题，开始匹配选项：问题={}, 选项={}", question, content);
+                return llmHttpUtil.call(
+                        "选择题选项匹配大模型",  // 新增模型名称
+                        choiceMatchBaseUrl,     // 新增：选项匹配模型URL（需在配置文件中定义）
+                        choiceMatchChatId,      // 新增：选项匹配模型chatId
+                        choiceMatchSessionId,   // 新增：选项匹配模型sessionId
+                        choiceMatchAuth,        // 新增：选项匹配模型鉴权信息
+                        buildChoicePrompt(baseAnswer, content),  // 构建匹配提示词
+                        trimmedAnswer -> {
+                            // 提取最终选项（如"A"、"B"等）
+                            String option = extractOption(trimmedAnswer);
+                            return option != null ? option : "根据已有知识无法回答";
+                        }
+                );
             } else {
-                return firstAnswer;
+                // 3.2 问答题：直接返回基础答案
+                return baseAnswer == null || baseAnswer.trim().isEmpty() || baseAnswer.contains("没找到答案")
+                        ? "我没找到答案"
+                        : baseAnswer;
             }
         } catch (Exception e) {
             log.error("知识问答大模型调用失败：question={}", question, e);
@@ -231,6 +261,34 @@ public class ExamController {
         }
     }
 
+// ------------------------------
+// 新增辅助方法
+// ------------------------------
+
+    /**
+     * 构建选择题选项匹配提示词
+     */
+    private String buildChoicePrompt(String baseAnswer, String options) {
+        return String.format("""
+            参考答案：%s
+            选项：%s
+            """, baseAnswer, options);
+    }
+
+    /**
+     * 提取选项字母（如从"A) 选项内容"中提取"A"）
+     */
+    private String extractOption(String answer) {
+        if (answer == null || answer.trim().isEmpty()) {
+            return null;
+        }
+        String trimmed = answer.trim();
+        // 匹配选项格式（如"A"、"A)"、"A."）
+        if (trimmed.matches("^[A-D](\\)|\\.)?.*")) {
+            return trimmed.substring(0, 1); // 返回首字母
+        }
+        return null;
+    }
     /**
      * 处理数据查询：双路径并发执行 + 结果归集 + 最终生成
      */
