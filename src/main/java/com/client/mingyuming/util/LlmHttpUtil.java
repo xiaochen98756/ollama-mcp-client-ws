@@ -105,12 +105,44 @@ public class LlmHttpUtil {
             }
             String trimmedAnswer = answer.trim();
 
-            // 8. 差异化处理 answer 并返回
-            return answerProcessor.apply(trimmedAnswer);
+            // 8. 如果是 SQL 生成模型，自动清理转义字符
+            String processedAnswer = trimmedAnswer;
+            if (modelName.contains("SQL生成大模型")) {
+                processedAnswer = cleanSql(trimmedAnswer);
+                log.info("【{}】SQL 清理前：{}，清理后：{}", modelName, trimmedAnswer, processedAnswer);
+            }
+            // 0. 差异化处理 answer 并返回
+            return answerProcessor.apply(processedAnswer);
 
         } catch (Exception e) {
             log.error("【{}】大模型调用异常",modelName, e);
             throw new RuntimeException("调用大模型【"+modelName+"】失败：" + e.getMessage());
         }
     }
+    /**
+     * 清理 SQL 中的转义字符（核心方法）
+     * 处理：\\n → 空格，\u003d → =，\u0027 → '，以及多余空格
+     */
+    /**
+     * 清理 SQL 中的双重转义字符（适配字符串中已转义的场景）
+     */
+    private String cleanSql(String sql) {
+        if (sql == null || sql.trim().isEmpty()) {
+            return sql;
+        }
+        return sql
+                // 1. 处理双重转义的换行符：\\\\n → 空格（先转成 \\n，再替换为空格）
+                .replace("\\\\n", "\n")  // 先将双重转义的换行符转为实际换行符
+                .replace("\n", " ")      // 再将换行符替换为空格
+                // 2. 处理双重转义的 Unicode 字符：\\u003d → \u003d → =
+                .replace("\\\\u003d", "\u003d")  // 先解析双重转义的等于号
+                .replace("\\u003d", "=")          // 再替换为实际等于号
+                // 3. 处理双重转义的单引号：\\u0027 → \u0027 → '
+                .replace("\\\\u0027", "\u0027")  // 先解析双重转义的单引号
+                .replace("\\u0027", "'")          // 再替换为实际单引号
+                // 4. 清理多余空格
+                .replaceAll("\\s+", " ")   // 连续空格合并为一个
+                .trim();                   // 去除首尾空格
+    }
+
 }
